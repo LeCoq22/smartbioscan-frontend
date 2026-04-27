@@ -1,12 +1,12 @@
 import * as React from 'react'
 import {
-  GalleryVerticalEnd,
   LayoutDashboard,
   Users,
   FileText,
   Settings2,
   HelpCircle,
 } from 'lucide-react'
+import { SmartBioScanIcon } from '@/assets/smartbioscan-logo'
 import { NavGroup } from '@/components/layout/nav-group'
 import { NavUser } from '@/components/layout/nav-user'
 import { TeamSwitcher } from '@/components/layout/team-switcher'
@@ -21,13 +21,13 @@ import {
 const data = {
   user: {
     name: 'Nutri',
-    email: 'nutri@smarttanita.com',
+    email: 'nutri@smartbioscan.com',
     avatar: '/avatars/shadcn.jpg',
   },
   teams: [
     {
-      name: 'SmartTanita',
-      logo: GalleryVerticalEnd,
+      name: 'SmartBioScan',
+      logo: SmartBioScanIcon,
       plan: 'Panel del Nutri',
     },
   ],
