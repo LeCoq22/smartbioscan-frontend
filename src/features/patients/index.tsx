@@ -104,7 +104,7 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
   async function handleVerify() {
     setVerifyStatus('loading')
     try {
-      const res = await fetch('http://localhost:8000/patients/verify-credentials', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/patients/verify-credentials`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,7 +127,7 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
     setSaving(true)
     setError(null)
     try {
-      const res = await fetch('http://localhost:8000/patients', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/patients`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -262,7 +262,7 @@ export default function PatientsPage() {
 async function generateReport(patient: Patient) {
   setReportStatus(s => ({ ...s, [patient.id]: 'loading' }))
   try {
-    const res = await fetch('http://localhost:8000/reports/generate', {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/reports/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

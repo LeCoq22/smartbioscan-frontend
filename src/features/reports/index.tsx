@@ -179,7 +179,7 @@ export default function ReportsPage() {
                             variant='outline'
                             title='Ver reporte en el browser'
                             onClick={() => window.open(
-                              `http://localhost:8000/reports/${report.id}/html?nutri_id=${NUTRI_ID}`,
+                              `${import.meta.env.VITE_API_URL}/reports/${report.id}/html?nutri_id=${NUTRI_ID}`,
                               '_blank'
                             )}
                           >
