@@ -1,7 +1,5 @@
 import * as React from 'react'
 import {
-  AudioWaveform,
-  Command,
   GalleryVerticalEnd,
   LayoutDashboard,
   Users,
@@ -59,7 +57,6 @@ const data = {
       items: [
         {
           title: 'Ajustes',
-          url: '/settings',
           icon: Settings2,
           items: [
             { title: 'Perfil', url: '/settings' },

@@ -254,7 +254,7 @@ export default function PatientsPage() {
   }
 
   async function loadQuota() {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .rpc('can_generate_report', { p_nutri_id: NUTRI_ID })
     if (data) setQuota({ used: data.used ?? 0, limit: data.limit ?? 0 })
   }
