@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { SmartBioScanLogo } from '@/assets/smartbioscan-logo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,7 +17,7 @@ import { cn } from '@/lib/utils'
 
 const plans = [
   {
-    id: 'basico-mensual',
+    apiPlanId: 'bioscan_basico_mensual',
     name: 'BioScan Básico',
     period: 'Mensual',
     reports: 30,
@@ -25,7 +28,7 @@ const plans = [
     featured: false,
   },
   {
-    id: 'plus-mensual',
+    apiPlanId: 'bioscan_plus_mensual',
     name: 'BioScan Plus',
     period: 'Mensual',
     reports: 100,
@@ -36,7 +39,7 @@ const plans = [
     featured: false,
   },
   {
-    id: 'basico-semestral',
+    apiPlanId: 'bioscan_basico_semestral',
     name: 'BioScan Básico',
     period: 'Semestral',
     reports: 30,
@@ -47,7 +50,7 @@ const plans = [
     featured: true,
   },
   {
-    id: 'plus-semestral',
+    apiPlanId: 'bioscan_plus_semestral',
     name: 'BioScan Plus',
     period: 'Semestral',
     reports: 100,
@@ -59,7 +62,31 @@ const plans = [
   },
 ]
 
+const API_URL = import.meta.env.VITE_API_URL as string
+
 export function Planes() {
+  const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null)
+
+  async function handleChoosePlan(apiPlanId: string) {
+    setLoadingPlanId(apiPlanId)
+    try {
+      const res = await fetch(`${API_URL}/payments/create-preference`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan_id: apiPlanId, user_email: '' }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail ?? `Error ${res.status}`)
+      }
+      const data = await res.json()
+      window.location.href = data.init_point
+    } catch (e) {
+      toast.error('No se pudo iniciar el pago. Intentá de nuevo.')
+      setLoadingPlanId(null)
+    }
+  }
+
   return (
     <div className='min-h-svh bg-background px-4 py-12'>
       <div className='mx-auto max-w-5xl space-y-10'>
@@ -76,7 +103,7 @@ export function Planes() {
 
         <div className='grid grid-cols-1 gap-6 pt-5 sm:grid-cols-2 xl:grid-cols-4'>
           {plans.map((plan) => (
-            <div key={plan.id} className='relative'>
+            <div key={plan.apiPlanId} className='relative'>
               {plan.featured && (
                 <div className='absolute -top-5 left-0 right-0 flex justify-center'>
                   <Badge className='px-4 py-1 text-sm font-semibold shadow-md'>
@@ -132,11 +159,17 @@ export function Planes() {
                   <Button
                     className='w-full'
                     variant={plan.featured ? 'default' : 'outline'}
-                    onClick={() =>
-                      console.log('Plan seleccionado:', plan.id, plan.name)
-                    }
+                    disabled={loadingPlanId !== null}
+                    onClick={() => handleChoosePlan(plan.apiPlanId)}
                   >
-                    Elegir este plan
+                    {loadingPlanId === plan.apiPlanId ? (
+                      <>
+                        <Loader2 className='animate-spin' />
+                        Redirigiendo...
+                      </>
+                    ) : (
+                      'Elegir este plan'
+                    )}
                   </Button>
                 </CardFooter>
               </Card>
