@@ -11,6 +11,14 @@ import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
 import { supabase } from '@/lib/supabase'
 
+function isPublicPath(pathname: string) {
+  return (
+    pathname === '/auth/callback' ||
+    pathname === '/planes' ||
+    pathname.startsWith('/planes/')
+  )
+}
+
 function RootComponent() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
 
@@ -28,17 +36,18 @@ function RootComponent() {
     return () => subscription.unsubscribe()
   }, [])
 
-  if (session === undefined) {
-    return (
-      <div className='flex min-h-svh items-center justify-center'>
-        <div className='h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent' />
-      </div>
-    )
-  }
-
-  const publicPaths = new Set(['/auth/callback', '/planes'])
-  if (!session && !publicPaths.has(window.location.pathname)) {
-    return <Login />
+  // Rutas públicas: bypass completo del chequeo de sesión
+  if (!isPublicPath(window.location.pathname)) {
+    if (session === undefined) {
+      return (
+        <div className='flex min-h-svh items-center justify-center'>
+          <div className='h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent' />
+        </div>
+      )
+    }
+    if (!session) {
+      return <Login />
+    }
   }
 
   return (
