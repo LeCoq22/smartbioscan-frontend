@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { SmartBioScanLogo } from '@/assets/smartbioscan-logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -136,6 +137,16 @@ export function Login() {
             Continuar con Facebook
           </button>
         </div>
+
+        <p className='text-center text-sm text-muted-foreground'>
+          ¿No tenés cuenta?{' '}
+          <Link
+            to='/planes'
+            className='font-medium underline underline-offset-4 hover:text-primary'
+          >
+            Registrate gratis
+          </Link>
+        </p>
       </div>
     </div>
   )

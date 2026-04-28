@@ -36,7 +36,8 @@ function RootComponent() {
     )
   }
 
-  if (!session && window.location.pathname !== '/auth/callback') {
+  const publicPaths = new Set(['/auth/callback', '/planes'])
+  if (!session && !publicPaths.has(window.location.pathname)) {
     return <Login />
   }
 
