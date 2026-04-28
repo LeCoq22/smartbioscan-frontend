@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as authCallbackRouteImport } from './routes/auth/callback'
 import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
@@ -41,6 +42,12 @@ import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+
+const authCallbackRoute = authCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
@@ -213,6 +220,7 @@ const AuthenticatedErrorsErrorRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/auth/callback': typeof authCallbackRoute
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
@@ -243,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/users/': typeof AuthenticatedUsersIndexRoute
 }
 export interface FileRoutesByTo {
+  '/auth/callback': typeof authCallbackRoute
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -274,6 +283,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/auth/callback': typeof authCallbackRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/clerk': typeof ClerkRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth/callback'
     | '/clerk'
     | '/settings'
     | '/forgot-password'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/auth/callback'
     | '/clerk'
     | '/forgot-password'
     | '/otp'
@@ -371,6 +383,7 @@ export interface FileRouteTypes {
     | '/users'
   id:
     | '__root__'
+    | '/auth/callback'
     | '/_authenticated'
     | '/clerk'
     | '/_authenticated/settings'
@@ -406,6 +419,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  authCallbackRoute: typeof authCallbackRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
@@ -422,6 +436,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof authCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clerk': {
       id: '/clerk'
       path: '/clerk'
@@ -745,6 +766,7 @@ const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  authCallbackRoute: authCallbackRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ClerkRouteRoute: ClerkRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,

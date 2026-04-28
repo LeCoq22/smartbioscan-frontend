@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { Session } from '@supabase/supabase-js'
 import { type QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
@@ -8,14 +9,35 @@ import { Toaster } from '@/components/ui/sonner'
 import { NavigationProgress } from '@/components/navigation-progress'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
+import { supabase } from '@/lib/supabase'
 
 function RootComponent() {
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    () => sessionStorage.getItem('sbs_auth') === 'true'
-  )
+  const [session, setSession] = useState<Session | null | undefined>(undefined)
 
-  if (!isAuthenticated) {
-    return <Login onSuccess={() => setIsAuthenticated(true)} />
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  if (session === undefined) {
+    return (
+      <div className='flex min-h-svh items-center justify-center'>
+        <div className='h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent' />
+      </div>
+    )
+  }
+
+  if (!session && window.location.pathname !== '/auth/callback') {
+    return <Login />
   }
 
   return (
