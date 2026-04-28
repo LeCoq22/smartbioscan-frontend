@@ -49,6 +49,49 @@ export function Login() {
           </h1>
         </div>
 
+        <form onSubmit={handleEmailLogin} className='space-y-4'>
+          <div className='space-y-2'>
+            <Label htmlFor='email'>Email</Label>
+            <Input
+              id='email'
+              type='email'
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                setError(null)
+              }}
+              placeholder='nombre@ejemplo.com'
+              autoComplete='email'
+              required
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label htmlFor='password'>Contraseña</Label>
+            <Input
+              id='password'
+              type='password'
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value)
+                setError(null)
+              }}
+              placeholder='••••••••'
+              autoComplete='current-password'
+              required
+            />
+          </div>
+          {error && <p className='text-sm text-destructive'>{error}</p>}
+          <Button type='submit' className='w-full' disabled={loading}>
+            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+          </Button>
+        </form>
+
+        <div className='flex items-center gap-3'>
+          <div className='flex-1 border-t border-border' />
+          <span className='text-sm text-muted-foreground'>o</span>
+          <div className='flex-1 border-t border-border' />
+        </div>
+
         <div className='space-y-3'>
           <button
             type='button'
@@ -93,49 +136,6 @@ export function Login() {
             Continuar con Facebook
           </button>
         </div>
-
-        <div className='flex items-center gap-3'>
-          <div className='flex-1 border-t border-border' />
-          <span className='text-sm text-muted-foreground'>o</span>
-          <div className='flex-1 border-t border-border' />
-        </div>
-
-        <form onSubmit={handleEmailLogin} className='space-y-4'>
-          <div className='space-y-2'>
-            <Label htmlFor='email'>Email</Label>
-            <Input
-              id='email'
-              type='email'
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                setError(null)
-              }}
-              placeholder='nombre@ejemplo.com'
-              autoComplete='email'
-              required
-            />
-          </div>
-          <div className='space-y-2'>
-            <Label htmlFor='password'>Contraseña</Label>
-            <Input
-              id='password'
-              type='password'
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value)
-                setError(null)
-              }}
-              placeholder='••••••••'
-              autoComplete='current-password'
-              required
-            />
-          </div>
-          {error && <p className='text-sm text-destructive'>{error}</p>}
-          <Button type='submit' className='w-full' disabled={loading}>
-            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-          </Button>
-        </form>
       </div>
     </div>
   )

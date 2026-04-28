@@ -10,7 +10,7 @@ function AuthCallback() {
       .exchangeCodeForSession(window.location.search)
       .then(({ error }) => {
         if (error) {
-          navigate({ to: '/sign-in' })
+          navigate({ to: '/' })
         } else {
           navigate({ to: '/' })
         }
