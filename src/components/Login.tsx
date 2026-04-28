@@ -1,47 +1,92 @@
-import { useState } from 'react'
+import { HTMLAttributes, useState } from 'react'
+import { useNavigate, Link } from '@tanstack/react-router'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
+import { cn } from '@/lib/utils'
 import { SmartBioScanLogo } from '@/assets/smartbioscan-logo'
 import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { supabase } from '@/lib/supabase'
+import { PasswordInput } from '@/components/password-input'
 
-export function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+const formSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: 'Please enter your email' })
+    .email({ message: 'Invalid email address' }),
+  password: z
+    .string()
+    .min(1, { message: 'Please enter your password' })
+    .min(7, { message: 'Password must be at least 7 characters long' }),
+})
 
-  async function handleEmailLogin(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+const GoogleIcon = () => (
+  <svg role='img' viewBox='0 0 24 24' className='mr-2 h-4 w-4' fill='currentColor'>
+    <path d='M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z' />
+  </svg>
+)
+
+const FacebookIcon = () => (
+  <svg role='img' viewBox='0 0 24 24' className='mr-2 h-4 w-4' fill='currentColor'>
+    <path d='M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z' />
+  </svg>
+)
+
+interface LoginProps extends HTMLAttributes<HTMLDivElement> {}
+
+export function Login({ className, ...props }: LoginProps) {
+  const navigate = useNavigate()
+  const [isLoading, setIsLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null)
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { email: '', password: '' },
+  })
+
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    setIsLoading(true)
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
     })
-    if (authError) {
-      setError('Email o contraseña incorrectos')
+    setIsLoading(false)
+
+    if (error) {
+      toast.error('Sign-in failed', { description: error.message })
+      return
     }
-    setLoading(false)
+
+    navigate({ to: '/', replace: true })
   }
 
-  async function handleGoogle() {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + '/auth/callback' },
+  async function handleOAuth(provider: 'google' | 'facebook') {
+    setOauthLoading(provider)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}/` },
     })
-  }
-
-  async function handleFacebook() {
-    await supabase.auth.signInWithOAuth({
-      provider: 'facebook',
-      options: { redirectTo: window.location.origin + '/auth/callback' },
-    })
+    setOauthLoading(null)
+    if (error) {
+      toast.error(`${provider} sign-in failed`, { description: error.message })
+    }
   }
 
   return (
     <div className='flex min-h-svh items-center justify-center bg-background p-4'>
       <div className='w-full max-w-sm space-y-6'>
+
+        {/* Logo + title */}
         <div className='flex flex-col items-center gap-3'>
           <SmartBioScanLogo className='h-16 w-auto' />
           <h1 className='text-xl font-semibold tracking-tight'>
@@ -49,94 +94,89 @@ export function Login() {
           </h1>
         </div>
 
-        <form onSubmit={handleEmailLogin} className='space-y-4'>
-          <div className='space-y-2'>
-            <Label htmlFor='email'>Email</Label>
-            <Input
-              id='email'
-              type='email'
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                setError(null)
-              }}
-              placeholder='nombre@ejemplo.com'
-              autoComplete='email'
-              required
-            />
-          </div>
-          <div className='space-y-2'>
-            <Label htmlFor='password'>Contraseña</Label>
-            <Input
-              id='password'
-              type='password'
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value)
-                setError(null)
-              }}
-              placeholder='••••••••'
-              autoComplete='current-password'
-              required
-            />
-          </div>
-          {error && <p className='text-sm text-destructive'>{error}</p>}
-          <Button type='submit' className='w-full' disabled={loading}>
-            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-          </Button>
-        </form>
+        {/* Form */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className={cn('grid gap-2', className)} {...props}>
 
-        <div className='flex items-center gap-3'>
-          <div className='flex-1 border-t border-border' />
-          <span className='text-sm text-muted-foreground'>o</span>
-          <div className='flex-1 border-t border-border' />
-        </div>
+              <FormField
+                control={form.control}
+                name='email'
+                render={({ field }) => (
+                  <FormItem className='space-y-1'>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder='name@example.com' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <div className='space-y-3'>
-          <button
-            type='button'
-            onClick={handleGoogle}
-            className='flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1'
-          >
-            <svg width='18' height='18' viewBox='0 0 18 18' aria-hidden='true'>
-              <path
-                fill='#4285F4'
-                d='M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z'
+              <FormField
+                control={form.control}
+                name='password'
+                render={({ field }) => (
+                  <FormItem className='space-y-1'>
+                    <div className='flex items-center justify-between'>
+                      <FormLabel>Contraseña</FormLabel>
+                      <Link
+                        to='/forgot-password'
+                        className='text-sm font-medium text-muted-foreground hover:opacity-75'
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </Link>
+                    </div>
+                    <FormControl>
+                      <PasswordInput placeholder='••••••••' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <path
-                fill='#34A853'
-                d='M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z'
-              />
-              <path
-                fill='#FBBC05'
-                d='M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z'
-              />
-              <path
-                fill='#EA4335'
-                d='M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z'
-              />
-            </svg>
-            Continuar con Google
-          </button>
 
-          <button
-            type='button'
-            onClick={handleFacebook}
-            className='flex w-full items-center justify-center gap-3 rounded-md bg-[#1877F2] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#166fe5] focus:outline-none focus:ring-2 focus:ring-[#1877F2] focus:ring-offset-1'
-          >
-            <svg
-              width='18'
-              height='18'
-              viewBox='0 0 24 24'
-              fill='white'
-              aria-hidden='true'
-            >
-              <path d='M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z' />
-            </svg>
-            Continuar con Facebook
-          </button>
-        </div>
+              <Button className='mt-2' disabled={isLoading} type='submit'>
+                {isLoading ? 'Iniciando sesión…' : 'Iniciar sesión'}
+              </Button>
 
+              <div className='relative my-2'>
+                <div className='absolute inset-0 flex items-center'>
+                  <span className='w-full border-t' />
+                </div>
+                <div className='relative flex justify-center text-xs uppercase'>
+                  <span className='bg-background px-2 text-muted-foreground'>o</span>
+                </div>
+              </div>
+
+              <div className='flex items-center gap-2'>
+                <Button
+                  variant='outline'
+                  className='w-full'
+                  type='button'
+                  disabled={oauthLoading !== null}
+                  onClick={() => handleOAuth('google')}
+                >
+                  <GoogleIcon />
+                  {oauthLoading === 'google' ? 'Redirigiendo…' : 'Google'}
+                </Button>
+
+                <Button
+                  variant='outline'
+                  className='w-full'
+                  type='button'
+                  disabled={oauthLoading !== null}
+                  onClick={() => handleOAuth('facebook')}
+                >
+                  <FacebookIcon />
+                  {oauthLoading === 'facebook' ? 'Redirigiendo…' : 'Facebook'}
+                </Button>
+              </div>
+
+            </div>
+          </form>
+        </Form>
+
+        {/* Registration link */}
         <p className='text-center text-sm text-muted-foreground'>
           ¿No tenés cuenta?{' '}
           <a
@@ -146,6 +186,7 @@ export function Login() {
             Registrate gratis
           </a>
         </p>
+
       </div>
     </div>
   )
