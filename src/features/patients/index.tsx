@@ -151,6 +151,7 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
     setVerifyStatus('loading')
     setProfiles([])
     setSelectedProfileId('')
+    setError(null)
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/patients/verify-credentials`,
@@ -166,19 +167,44 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
           }),
         }
       )
-      const data = await res.json()
-      if (data.ok) {
-        setVerifyStatus('ok')
-        const list: ProfileOption[] = data.profiles ?? []
-        setProfiles(list)
-        // Auto-select when single profile or when profile_id is not null
-        const first = list[0]
-        if (first) setSelectedProfileId(first.profile_id ?? '')
-      } else {
-        setVerifyStatus('error')
+
+      if (res.status >= 500) {
+        setVerifyStatus('idle')
+        setError(
+          'Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.'
+        )
+        return
       }
+
+      const data = await res.json()
+
+      if (res.status === 404 || data?.error === 'no_profiles_found') {
+        setVerifyStatus('idle')
+        setError('No se encontraron perfiles en esta cuenta.')
+        return
+      }
+
+      if (
+        res.status === 401 ||
+        !res.ok ||
+        data?.error === 'invalid_credentials' ||
+        !data?.ok
+      ) {
+        setVerifyStatus('error')
+        return
+      }
+
+      // Success
+      setVerifyStatus('ok')
+      const list: ProfileOption[] = data.profiles ?? []
+      setProfiles(list)
+      const first = list[0]
+      if (first) setSelectedProfileId(first.profile_id ?? '')
     } catch {
-      setVerifyStatus('error')
+      setVerifyStatus('idle')
+      setError(
+        'Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.'
+      )
     }
   }
 
