@@ -123,7 +123,7 @@ function PatientReportsPage() {
           'Content-Type': 'application/json',
           'X-Nutri-Id': NUTRI_ID,
         },
-        body: JSON.stringify({ patient_id: patientId }),
+        body: JSON.stringify({ patient_id: patientId, measurement_date: measurementDate }),
       })
       if (res.status >= 500) {
         toast.error('Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.')
