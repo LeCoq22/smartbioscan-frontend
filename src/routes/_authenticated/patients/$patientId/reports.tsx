@@ -94,6 +94,10 @@ function PatientReportsPage() {
           headers: { 'X-Nutri-Id': NUTRI_ID },
         }
       )
+      if (res.status >= 500) {
+        toast.error('Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.')
+        return
+      }
       const data = await res.json()
       if (res.ok) {
         toast.success(
@@ -104,7 +108,7 @@ function PatientReportsPage() {
         toast.error(data.detail ?? 'Error al sincronizar')
       }
     } catch {
-      toast.error('No se pudo conectar con el servidor')
+      toast.error('Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.')
     } finally {
       setSyncing(false)
     }
@@ -121,6 +125,10 @@ function PatientReportsPage() {
         },
         body: JSON.stringify({ patient_id: patientId }),
       })
+      if (res.status >= 500) {
+        toast.error('Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.')
+        return
+      }
       const data = await res.json()
       if (res.ok && data.ok) {
         if (data.skipped) {
@@ -192,8 +200,7 @@ function PatientReportsPage() {
         <CardHeader>
           <CardTitle>Historial de mediciones</CardTitle>
           <CardDescription>
-            {measurements.length} medición{measurements.length !== 1 ? 'es' : ''} registrada
-            {measurements.length !== 1 ? 's' : ''}. Usá "Actualizar mediciones" para sincronizar desde MyTanita.
+            {measurements.length !== 1 ? `${measurements.length} mediciones registradas` : '1 medición registrada'}. Usá "Actualizar mediciones" para sincronizar desde MyTanita.
           </CardDescription>
         </CardHeader>
         <CardContent>
