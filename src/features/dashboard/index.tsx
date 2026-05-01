@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { Users, FileText, CalendarCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
@@ -54,7 +55,24 @@ function formatSubscription(dateStr: string | null) {
 }
 
 export function Dashboard() {
+  const navigate = useNavigate()
   const { data, isLoading } = useDashboardStats()
+
+  function clickableCardProps(to: string) {
+    return {
+      role: 'button' as const,
+      tabIndex: 0,
+      className:
+        'cursor-pointer transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      onClick: () => navigate({ to }),
+      onKeyDown: (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          navigate({ to })
+        }
+      },
+    }
+  }
 
   return (
     <>
@@ -71,7 +89,7 @@ export function Dashboard() {
         </div>
 
         <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-          <Card>
+          <Card {...clickableCardProps('/patients')}>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
               <CardTitle className='text-sm font-medium'>
                 Pacientes cargados
@@ -82,10 +100,11 @@ export function Dashboard() {
               <div className='text-2xl font-bold'>
                 {isLoading ? '—' : data?.patients}
               </div>
+              <p className='text-xs text-muted-foreground mt-1'>Ver pacientes →</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card {...clickableCardProps('/reports')}>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
               <CardTitle className='text-sm font-medium'>
                 Reportes generados
@@ -96,6 +115,7 @@ export function Dashboard() {
               <div className='text-2xl font-bold'>
                 {isLoading ? '—' : data?.reports}
               </div>
+              <p className='text-xs text-muted-foreground mt-1'>Ver reportes →</p>
             </CardContent>
           </Card>
 
