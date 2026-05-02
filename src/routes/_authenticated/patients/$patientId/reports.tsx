@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Loader2, RefreshCw, FileText, Eye } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -63,9 +63,20 @@ function PatientReportsPage() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [generatingFor, setGeneratingFor] = useState<string | null>(null)
+  const [newReportDates, setNewReportDates] = useState<Set<string>>(new Set())
+  const autoSyncDone = useRef(false)
 
   useEffect(() => {
-    loadAll()
+    const shouldAutoSync =
+      !autoSyncDone.current &&
+      sessionStorage.getItem('smartbioscan_autosync') === patientId
+    if (shouldAutoSync) {
+      autoSyncDone.current = true
+      sessionStorage.removeItem('smartbioscan_autosync')
+    }
+    loadAll().then(() => {
+      if (shouldAutoSync) handleSync()
+    })
   }, [patientId])
 
   async function loadAll() {
@@ -141,6 +152,7 @@ function PatientReportsPage() {
         if (data.pdf_url) {
           window.open(data.pdf_url, '_blank')
         }
+        setNewReportDates((prev) => new Set(prev).add(measurementDate))
         await loadAll()
       }
     } catch {
@@ -150,7 +162,14 @@ function PatientReportsPage() {
     }
   }
 
-  async function handleViewReport(reportId: string) {
+  async function handleViewReport(reportId: string, measurementDate?: string) {
+    if (measurementDate) {
+      setNewReportDates((prev) => {
+        const next = new Set(prev)
+        next.delete(measurementDate)
+        return next
+      })
+    }
     window.open(
       `${import.meta.env.VITE_API_URL}/reports/${reportId}/html?nutri_id=${NUTRI_ID}`,
       '_blank'
@@ -261,11 +280,16 @@ function PatientReportsPage() {
                     </TableCell>
                     <TableCell>
                       <div className='flex items-center gap-1 justify-end'>
+                        {newReportDates.has(m.measurement_date) && (
+                          <Badge className='bg-green-500 hover:bg-green-500 text-white text-xs px-1.5 py-0.5'>
+                            Nuevo
+                          </Badge>
+                        )}
                         {m.report_generated && m.report_id ? (
                           <Button
                             size='sm'
                             variant='ghost'
-                            onClick={() => handleViewReport(m.report_id!)}
+                            onClick={() => handleViewReport(m.report_id!, m.measurement_date)}
                             title='Ver reporte'
                           >
                             <Eye className='mr-1 h-4 w-4' />Ver

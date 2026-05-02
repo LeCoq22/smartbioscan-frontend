@@ -117,6 +117,7 @@ interface ProfileOption {
 }
 
 function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -227,6 +228,7 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
         }),
       })
       if (res.ok) {
+        const newPatientId: string = data.patient_id
         setOpen(false)
         setForm(EMPTY_FORM)
         setVerifyStatus('idle')
@@ -234,6 +236,11 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
         setSelectedProfileId('')
         onCreated()
         toast.success('Paciente creado correctamente')
+        sessionStorage.setItem('smartbioscan_autosync', newPatientId)
+        navigate({
+          to: '/patients/$patientId/reports',
+          params: { patientId: newPatientId },
+        })
       } else {
         const err = await res.json()
         if (res.status === 409) {
