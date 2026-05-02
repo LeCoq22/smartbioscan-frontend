@@ -10,6 +10,7 @@ import { NavigationProgress } from '@/components/navigation-progress'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
 import { supabase } from '@/lib/supabase'
+import { useInactivityLogout } from '@/hooks/use-inactivity-logout'
 
 function isPublicPath(pathname: string) {
   return (
@@ -21,6 +22,8 @@ function isPublicPath(pathname: string) {
 
 function RootComponent() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
+
+  useInactivityLogout(!!session)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {

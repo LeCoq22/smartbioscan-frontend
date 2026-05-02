@@ -84,6 +84,14 @@ function PatientReportsPage() {
     setLoading(false)
   }
 
+  function apiErrorMessage(status: number, data: Record<string, unknown>, fallback: string): string {
+    if (status === 401 || status === 403) return 'Sesión expirada, volvé a iniciar sesión'
+    if (status === 404) return 'Paciente no encontrado o sin credenciales configuradas'
+    if (status === 429) return String(data.detail ?? 'Quota de reportes agotada')
+    if (status >= 500) return 'Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.'
+    return String(data.detail ?? data.error ?? fallback)
+  }
+
   async function handleSync() {
     setSyncing(true)
     try {
@@ -94,21 +102,17 @@ function PatientReportsPage() {
           headers: { 'X-Nutri-Id': NUTRI_ID },
         }
       )
-      if (res.status >= 500) {
-        toast.error('Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(apiErrorMessage(res.status, data, 'Error al sincronizar'))
         return
       }
-      const data = await res.json()
-      if (res.ok) {
-        toast.success(
-          `Sincronizado: ${data.synced} mediciones${data.latest_date ? ` — última: ${data.latest_date}` : ''}`
-        )
-        await loadAll()
-      } else {
-        toast.error(data.detail ?? 'Error al sincronizar')
-      }
+      toast.success(
+        `Sincronizado: ${data.synced} mediciones${data.latest_date ? ` — última: ${data.latest_date}` : ''}`
+      )
+      await loadAll()
     } catch {
-      toast.error('Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.')
+      toast.error('No se pudo conectar con el servidor')
     } finally {
       setSyncing(false)
     }
@@ -125,23 +129,19 @@ function PatientReportsPage() {
         },
         body: JSON.stringify({ patient_id: patientId, measurement_date: measurementDate }),
       })
-      if (res.status >= 500) {
-        toast.error('Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(apiErrorMessage(res.status, data, 'Error al generar el reporte'))
         return
       }
-      const data = await res.json()
-      if (res.ok && data.ok) {
-        if (data.skipped) {
-          toast.info('No hay mediciones nuevas desde el último reporte')
-        } else {
-          toast.success('Reporte generado correctamente')
-          if (data.pdf_url) {
-            window.open(data.pdf_url, '_blank')
-          }
-          await loadAll()
-        }
+      if (data.skipped) {
+        toast.info('No hay mediciones nuevas desde el último reporte')
       } else {
-        toast.error(data.detail ?? data.error ?? 'Error al generar el reporte')
+        toast.success('Reporte generado correctamente')
+        if (data.pdf_url) {
+          window.open(data.pdf_url, '_blank')
+        }
+        await loadAll()
       }
     } catch {
       toast.error('No se pudo conectar con el servidor')
@@ -176,7 +176,6 @@ function PatientReportsPage() {
           )}
         </div>
         <Button
-          variant='outline'
           size='sm'
           onClick={handleSync}
           disabled={syncing}
@@ -285,7 +284,7 @@ function PatientReportsPage() {
                               </>
                             ) : (
                               <>
-                                <FileText className='mr-1 h-4 w-4' />PDF
+                                <FileText className='mr-1 h-4 w-4' />Generar reporte
                               </>
                             )}
                           </Button>
