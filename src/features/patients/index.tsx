@@ -227,8 +227,9 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
           mytanita_profile_id: selectedProfileId || null,
         }),
       })
+      const resData = await res.json().catch(() => ({}))
       if (res.ok) {
-        const newPatientId: string = data.patient_id
+        const newPatientId: string = resData.patient_id
         setOpen(false)
         setForm(EMPTY_FORM)
         setVerifyStatus('idle')
@@ -242,11 +243,10 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
           params: { patientId: newPatientId },
         })
       } else {
-        const err = await res.json()
         if (res.status === 409) {
           setError('Ya existe un paciente registrado con estos datos.')
         } else if (res.status === 422) {
-          const detail = err.detail ?? ''
+          const detail = resData.detail ?? ''
           if (
             detail.toLowerCase().includes('límite') ||
             detail.toLowerCase().includes('limite') ||
@@ -257,7 +257,7 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
             setError('Credenciales MyTanita inválidas.')
           }
         } else {
-          setError(err.detail ?? 'Error al crear el paciente')
+          setError(resData.detail ?? 'Error al crear el paciente')
         }
       }
     } catch {
