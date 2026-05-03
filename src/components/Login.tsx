@@ -1,11 +1,10 @@
-import { HTMLAttributes, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, Link } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
-import { cn } from '@/lib/utils'
 import { SmartBioScanLogo } from '@/assets/smartbioscan-logo'
 import { Button } from '@/components/ui/button'
 import {
@@ -42,9 +41,7 @@ const FacebookIcon = () => (
   </svg>
 )
 
-interface LoginProps extends HTMLAttributes<HTMLDivElement> {}
-
-export function Login({ className, ...props }: LoginProps) {
+export function Login() {
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null)
@@ -97,7 +94,7 @@ export function Login({ className, ...props }: LoginProps) {
         {/* Form */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className={cn('grid gap-2', className)} {...props}>
+            <div className='grid gap-2'>
 
               <FormField
                 control={form.control}

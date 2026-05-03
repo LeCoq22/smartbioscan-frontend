@@ -9,28 +9,18 @@ import {
 import { SmartBioScanIcon } from '@/assets/smartbioscan-logo'
 import { NavGroup } from '@/components/layout/nav-group'
 import { NavUser } from '@/components/layout/nav-user'
-import { TeamSwitcher } from '@/components/layout/team-switcher'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
 
 const data = {
-  user: {
-    name: 'Nutri',
-    email: 'nutri@smartbioscan.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
-  teams: [
-    {
-      name: 'SmartBioScan',
-      logo: SmartBioScanIcon,
-      plan: 'Panel del Nutri',
-    },
-  ],
   navGroups: [
     {
       title: 'Principal',
@@ -78,7 +68,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible='icon' {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size='lg' className='pointer-events-none'>
+              <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground'>
+                <SmartBioScanIcon className='size-4' />
+              </div>
+              <div className='grid flex-1 text-start text-sm leading-tight'>
+                <span className='truncate font-semibold'>SmartBioScan</span>
+                <span className='truncate text-xs'>Panel del Nutricionista</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         {data.navGroups.map((props) => (
@@ -86,7 +88,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
