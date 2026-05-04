@@ -93,8 +93,8 @@ export function Login() {
 
         {/* Form */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className='grid gap-2'>
+          <form onSubmit={form.handleSubmit(onSubmit)} className='w-full'>
+            <div className='grid gap-2 w-full'>
 
               <FormField
                 control={form.control}
@@ -145,10 +145,9 @@ export function Login() {
                 </div>
               </div>
 
-              <div className='flex items-center gap-2'>
+              <div className='grid grid-cols-2 gap-2'>
                 <Button
                   variant='outline'
-                  className='w-full'
                   type='button'
                   disabled={oauthLoading !== null}
                   onClick={() => handleOAuth('google')}
@@ -159,7 +158,6 @@ export function Login() {
 
                 <Button
                   variant='outline'
-                  className='w-full'
                   type='button'
                   disabled={oauthLoading !== null}
                   onClick={() => handleOAuth('facebook')}
