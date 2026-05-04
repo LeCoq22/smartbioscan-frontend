@@ -57,13 +57,38 @@ export function Login() {
       email: data.email,
       password: data.password,
     })
-    setIsLoading(false)
 
     if (error) {
-      toast.error('Sign-in failed', { description: error.message })
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/auth/login-hint`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: data.email }),
+          }
+        )
+        if (res.ok) {
+          const { hint } = await res.json()
+          if (hint === 'not_registered') {
+            toast.error('Email no registrado', {
+              description: 'No encontramos una cuenta con ese email. ¿Querés registrarte?',
+            })
+            setIsLoading(false)
+            return
+          }
+        }
+      } catch {
+        // fallback to generic
+      }
+      toast.error('Credenciales incorrectas', {
+        description: 'Revisá tu email y contraseña e intentá de nuevo.',
+      })
+      setIsLoading(false)
       return
     }
 
+    setIsLoading(false)
     navigate({ to: '/', replace: true })
   }
 

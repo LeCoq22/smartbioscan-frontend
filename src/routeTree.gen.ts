@@ -9,10 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as authCallbackRouteImport } from './routes/auth/callback'
 import { Route as PlanesRouteImport } from './routes/planes'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
@@ -26,164 +26,141 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports/index'
 import { Route as AuthenticatedPatientsIndexRouteImport } from './routes/_authenticated/patients/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
-import { Route as AuthenticatedPatientsPatientIdReportsRouteImport } from './routes/_authenticated/patients/$patientId/reports'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
-
-const authCallbackRoute = authCallbackRouteImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
+import { Route as AuthenticatedPatientsPatientIdReportsRouteImport } from './routes/_authenticated/patients/$patientId/reports'
 
 const PlanesRoute = PlanesRouteImport.update({
   id: '/planes',
   path: '/planes',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const errors503Route = errors503RouteImport.update({
   id: '/(errors)/503',
   path: '/503',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const errors500Route = errors500RouteImport.update({
   id: '/(errors)/500',
   path: '/500',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const errors404Route = errors404RouteImport.update({
   id: '/(errors)/404',
   path: '/404',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const errors403Route = errors403RouteImport.update({
   id: '/(errors)/403',
   path: '/403',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const errors401Route = errors401RouteImport.update({
   id: '/(errors)/401',
   path: '/401',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const authSignUpRoute = authSignUpRouteImport.update({
   id: '/(auth)/sign-up',
   path: '/sign-up',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const authSignInRoute = authSignInRouteImport.update({
   id: '/(auth)/sign-in',
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   id: '/(auth)/forgot-password',
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-
 const AuthenticatedReportsIndexRoute =
   AuthenticatedReportsIndexRouteImport.update({
     id: '/reports/',
     path: '/reports/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-
 const AuthenticatedPatientsIndexRoute =
   AuthenticatedPatientsIndexRouteImport.update({
     id: '/patients/',
     path: '/patients/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-
 const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexRouteImport.update({
     id: '/help-center/',
     path: '/help-center/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-
-const AuthenticatedPatientsPatientIdReportsRoute =
-  AuthenticatedPatientsPatientIdReportsRouteImport.update({
-    id: '/_authenticated/patients/$patientId/reports',
-    path: '/patients/$patientId/reports',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-
 const AuthenticatedSettingsDisplayRoute =
   AuthenticatedSettingsDisplayRouteImport.update({
     id: '/display',
     path: '/display',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-
 const AuthenticatedSettingsAppearanceRoute =
   AuthenticatedSettingsAppearanceRouteImport.update({
     id: '/appearance',
     path: '/appearance',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-
 const AuthenticatedSettingsAccountRoute =
   AuthenticatedSettingsAccountRouteImport.update({
     id: '/account',
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-
 const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPatientsPatientIdReportsRoute =
+  AuthenticatedPatientsPatientIdReportsRouteImport.update({
+    id: '/patients/$patientId/reports',
+    path: '/patients/$patientId/reports',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
-  '/auth/callback': typeof authCallbackRoute
   '/planes': typeof PlanesRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
@@ -194,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/auth/callback': typeof AuthCallbackRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -201,13 +179,11 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/patients/': typeof AuthenticatedPatientsIndexRoute
-  '/patients/$patientId/reports': typeof AuthenticatedPatientsPatientIdReportsRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/patients/$patientId/reports': typeof AuthenticatedPatientsPatientIdReportsRoute
 }
-
 export interface FileRoutesByTo {
-  '/auth/callback': typeof authCallbackRoute
   '/planes': typeof PlanesRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/sign-in': typeof authSignInRoute
@@ -217,6 +193,7 @@ export interface FileRoutesByTo {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -225,16 +202,14 @@ export interface FileRoutesByTo {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/patients': typeof AuthenticatedPatientsIndexRoute
-  '/patients/$patientId/reports': typeof AuthenticatedPatientsPatientIdReportsRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/patients/$patientId/reports': typeof AuthenticatedPatientsPatientIdReportsRoute
 }
-
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/auth/callback': typeof authCallbackRoute
-  '/planes': typeof PlanesRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/planes': typeof PlanesRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/sign-in': typeof authSignInRoute
@@ -244,6 +219,7 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
+  '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -252,16 +228,14 @@ export interface FileRoutesById {
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/patients/': typeof AuthenticatedPatientsIndexRoute
-  '/_authenticated/patients/$patientId/reports': typeof AuthenticatedPatientsPatientIdReportsRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/_authenticated/patients/$patientId/reports': typeof AuthenticatedPatientsPatientIdReportsRoute
 }
-
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/auth/callback'
     | '/planes'
     | '/settings'
     | '/forgot-password'
@@ -272,6 +246,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/auth/callback'
     | '/errors/$error'
     | '/settings/account'
     | '/settings/appearance'
@@ -279,12 +254,11 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/help-center/'
     | '/patients/'
-    | '/patients/$patientId/reports'
     | '/reports/'
     | '/settings/'
+    | '/patients/$patientId/reports'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/auth/callback'
     | '/planes'
     | '/forgot-password'
     | '/sign-in'
@@ -294,6 +268,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/auth/callback'
     | '/'
     | '/errors/$error'
     | '/settings/account'
@@ -302,14 +277,13 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/help-center'
     | '/patients'
-    | '/patients/$patientId/reports'
     | '/reports'
     | '/settings'
+    | '/patients/$patientId/reports'
   id:
     | '__root__'
-    | '/auth/callback'
-    | '/planes'
     | '/_authenticated'
+    | '/planes'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
     | '/(auth)/sign-in'
@@ -319,6 +293,7 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
+    | '/auth/callback'
     | '/_authenticated/'
     | '/_authenticated/errors/$error'
     | '/_authenticated/settings/account'
@@ -327,16 +302,14 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/notifications'
     | '/_authenticated/help-center/'
     | '/_authenticated/patients/'
-    | '/_authenticated/patients/$patientId/reports'
     | '/_authenticated/reports/'
     | '/_authenticated/settings/'
+    | '/_authenticated/patients/$patientId/reports'
   fileRoutesById: FileRoutesById
 }
-
 export interface RootRouteChildren {
-  authCallbackRoute: typeof authCallbackRoute
-  PlanesRoute: typeof PlanesRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  PlanesRoute: typeof PlanesRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authSignInRoute: typeof authSignInRoute
   authSignUpRoute: typeof authSignUpRoute
@@ -345,17 +318,11 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
+  AuthCallbackRoute: typeof AuthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof authCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/planes': {
       id: '/planes'
       path: '/planes'
@@ -376,6 +343,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/(errors)/503': {
       id: '/(errors)/503'
@@ -461,13 +435,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPatientsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/patients/$patientId/reports': {
-      id: '/_authenticated/patients/$patientId/reports'
-      path: '/patients/$patientId/reports'
-      fullPath: '/patients/$patientId/reports'
-      preLoaderRoute: typeof AuthenticatedPatientsPatientIdReportsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
       path: '/help-center'
@@ -510,6 +477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/patients/$patientId/reports': {
+      id: '/_authenticated/patients/$patientId/reports'
+      path: '/patients/$patientId/reports'
+      fullPath: '/patients/$patientId/reports'
+      preLoaderRoute: typeof AuthenticatedPatientsPatientIdReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -542,8 +516,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedPatientsIndexRoute: typeof AuthenticatedPatientsIndexRoute
-  AuthenticatedPatientsPatientIdReportsRoute: typeof AuthenticatedPatientsPatientIdReportsRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
+  AuthenticatedPatientsPatientIdReportsRoute: typeof AuthenticatedPatientsPatientIdReportsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -552,18 +526,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedPatientsIndexRoute: AuthenticatedPatientsIndexRoute,
+  AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedPatientsPatientIdReportsRoute:
     AuthenticatedPatientsPatientIdReportsRoute,
-  AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  authCallbackRoute: authCallbackRoute,
-  PlanesRoute: PlanesRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  PlanesRoute: PlanesRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authSignInRoute: authSignInRoute,
   authSignUpRoute: authSignUpRoute,
@@ -572,8 +545,8 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
+  AuthCallbackRoute: AuthCallbackRoute,
 }
-
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
