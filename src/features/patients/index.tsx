@@ -758,7 +758,7 @@ export default function PatientsPage() {
       .eq('is_active', true)
       .order('full_name')
 
-    if (error) console.error('Error cargando pacientes:', error)
+    if (error) return setLoading(false)
     setPatients(data ?? [])
     setLoading(false)
   }

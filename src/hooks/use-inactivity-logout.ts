@@ -7,8 +7,8 @@ const MAX_SESSION_MS = 8 * 60 * 60 * 1000  // 8 h de sesión absoluta
 const CHECK_INTERVAL_MS = 60_000        // chequear cada 1 min
 
 export function useInactivityLogout(isAuthenticated: boolean) {
-  const lastActivityRef = useRef(Date.now())
-  const sessionStartRef = useRef(Date.now())
+  const lastActivityRef = useRef(0)
+  const sessionStartRef = useRef(0)
 
   useEffect(() => {
     if (!isAuthenticated) return

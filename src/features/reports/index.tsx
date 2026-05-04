@@ -51,23 +51,19 @@ export default function ReportsPage() {
   const [downloading, setDownloading] = useState<string | null>(null)
 
   useEffect(() => {
-    loadReports()
+    void (async () => {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*, patients(full_name, sex)')
+        .eq('nutri_id', NUTRI_ID)
+        .order('generated_at', { ascending: false })
+        .limit(100)
+
+      if (error) return setLoading(false)
+      setReports(data ?? [])
+      setLoading(false)
+    })()
   }, [])
-
-  async function loadReports() {
-    setLoading(true)
-
-    const { data, error } = await supabase
-      .from('reports')
-      .select('*, patients(full_name, sex)')
-      .eq('nutri_id', NUTRI_ID)
-      .order('generated_at', { ascending: false })
-      .limit(100)
-
-    if (error) console.error('Error cargando reportes:', error)
-    setReports(data ?? [])
-    setLoading(false)
-  }
 
   async function downloadPdf(report: Report) {
     if (!report.pdf_storage_path) return

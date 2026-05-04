@@ -80,8 +80,9 @@ export function Planes() {
         throw new Error(err.detail ?? `Error ${res.status}`)
       }
       const data = await res.json()
+      // eslint-disable-next-line react-hooks/immutability
       window.location.href = data.init_point
-    } catch (e) {
+    } catch (_e) {
       toast.error('No se pudo iniciar el pago. Intentá de nuevo.')
       setLoadingPlanId(null)
     }
