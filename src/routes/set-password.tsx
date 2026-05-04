@@ -44,17 +44,16 @@ function SetPasswordPage() {
   const navigate = useNavigate()
   const { token } = Route.useSearch()
 
-  const [state, setState] = useState<PageState>({ status: 'loading' })
+  const [state, setState] = useState<PageState>(() =>
+    token ? { status: 'loading' } : { status: 'invalid', reason: 'not_found' }
+  )
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
-    if (!token) {
-      setState({ status: 'invalid', reason: 'not_found' })
-      return
-    }
+    if (!token) return
     fetch(
       `${import.meta.env.VITE_API_URL}/api/auth/validate-token?token=${encodeURIComponent(token)}`
     )
