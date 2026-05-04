@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Loader2, RefreshCw, FileText, Eye } from 'lucide-react'
+import { ArrowLeft, Loader2, RefreshCw, FileText, Eye, Download } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { toast } from 'sonner'
@@ -176,6 +176,28 @@ function PatientReportsPage() {
     )
   }
 
+  async function handleDownloadPdf(reportId: string, measurementDate: string) {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/reports/${reportId}/pdf`,
+        { headers: { 'X-Nutri-Id': NUTRI_ID } }
+      )
+      if (!res.ok) {
+        toast.error('No se pudo descargar el PDF')
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `reporte-${patientName.toLowerCase().replace(/\s+/g, '-')}-${measurementDate}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error('No se pudo conectar con el servidor')
+    }
+  }
+
   return (
     <div className='p-6 space-y-6'>
       {/* Header */}
@@ -286,14 +308,24 @@ function PatientReportsPage() {
                           </Badge>
                         )}
                         {m.report_generated && m.report_id ? (
-                          <Button
-                            size='sm'
-                            variant='ghost'
-                            onClick={() => handleViewReport(m.report_id!, m.measurement_date)}
-                            title='Ver reporte'
-                          >
-                            <Eye className='mr-1 h-4 w-4' />Ver
-                          </Button>
+                          <>
+                            <Button
+                              size='sm'
+                              variant='ghost'
+                              onClick={() => handleViewReport(m.report_id!, m.measurement_date)}
+                              title='Ver reporte'
+                            >
+                              <Eye className='mr-1 h-4 w-4' />Ver
+                            </Button>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              onClick={() => handleDownloadPdf(m.report_id!, m.measurement_date)}
+                              title='Descargar PDF'
+                            >
+                              <Download className='mr-1 h-4 w-4' />PDF
+                            </Button>
+                          </>
                         ) : (
                           <Button
                             size='sm'
