@@ -1,18 +1,10 @@
-import { z } from 'zod'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { showSubmittedData } from '@/lib/show-submitted-data'
-import { cn } from '@/lib/utils'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
 import {
   Form,
   FormControl,
@@ -23,50 +15,97 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { DatePicker } from '@/components/date-picker'
 
-const languages = [
-  { label: 'English', value: 'en' },
-  { label: 'French', value: 'fr' },
-  { label: 'German', value: 'de' },
-  { label: 'Spanish', value: 'es' },
-  { label: 'Portuguese', value: 'pt' },
-  { label: 'Russian', value: 'ru' },
-  { label: 'Japanese', value: 'ja' },
-  { label: 'Korean', value: 'ko' },
-  { label: 'Chinese', value: 'zh' },
-] as const
+const API_URL = import.meta.env.VITE_API_URL as string
 
-const accountFormSchema = z.object({
-  name: z
+const signatureSchema = z.object({
+  display_signature: z
     .string()
-    .min(1, 'Please enter your name.')
-    .min(2, 'Name must be at least 2 characters.')
-    .max(30, 'Name must not be longer than 30 characters.'),
-  dob: z.date('Please select your date of birth.'),
-  language: z.string('Please select a language.'),
+    .min(1, 'La firma no puede estar vacía.')
+    .max(120, 'Máximo 120 caracteres.')
+    .refine((v) => v.trim().length > 0, 'La firma no puede ser solo espacios.')
+    .refine((v) => !/[\n\r]/.test(v), 'La firma no puede tener saltos de línea.'),
 })
 
-type AccountFormValues = z.infer<typeof accountFormSchema>
-
-// This can come from your database or API.
-const defaultValues: Partial<AccountFormValues> = {
-  name: '',
-}
+type SignatureFormValues = z.infer<typeof signatureSchema>
 
 export function AccountForm() {
-  const form = useForm<AccountFormValues>({
-    resolver: zodResolver(accountFormSchema),
-    defaultValues,
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+
+  const form = useForm<SignatureFormValues>({
+    resolver: zodResolver(signatureSchema),
+    defaultValues: { display_signature: '' },
   })
 
-  function onSubmit(data: AccountFormValues) {
-    showSubmittedData(data)
+  const displaySignature = form.watch('display_signature')
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        if (!session) {
+          setIsLoading(false)
+          return
+        }
+        const res = await fetch(`${API_URL}/api/nutris/me`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'X-Nutri-Id': session.user.id,
+          },
+        })
+        if (!res.ok) throw new Error('Error al cargar el perfil')
+        const data: { display_signature?: string; full_name?: string } =
+          await res.json()
+        form.reset({
+          display_signature:
+            data.display_signature ?? data.full_name ?? '',
+        })
+      } catch {
+        toast.error('No se pudo cargar el perfil.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    void loadProfile()
+  }, [form])
+
+  async function onSubmit(values: SignatureFormValues) {
+    setIsSaving(true)
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session) throw new Error('Sin sesión activa')
+      const res = await fetch(`${API_URL}/api/nutris/me`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+          'X-Nutri-Id': session.user.id,
+        },
+        body: JSON.stringify({
+          display_signature: values.display_signature,
+        }),
+      })
+      if (!res.ok) {
+        const err: { detail?: string } = await res.json()
+        throw new Error(err.detail ?? 'Error al guardar')
+      }
+      toast.success('Firma actualizada.')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al guardar.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <p className='text-sm text-muted-foreground'>Cargando perfil…</p>
+    )
   }
 
   return (
@@ -74,99 +113,48 @@ export function AccountForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
         <FormField
           control={form.control}
-          name='name'
+          name='display_signature'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Cómo aparezco en los reportes</FormLabel>
               <FormControl>
-                <Input placeholder='Your name' {...field} />
+                <Input
+                  placeholder='Ej: Lic. Diana Makk - Nutricionista'
+                  maxLength={120}
+                  {...field}
+                />
               </FormControl>
+              <div className='flex justify-end'>
+                <span className='text-xs text-muted-foreground'>
+                  {field.value.length} / 120
+                </span>
+              </div>
               <FormDescription>
-                This is the name that will be displayed on your profile and in
-                emails.
+                Esta línea es lo que verán tus pacientes en el encabezado del
+                reporte. Por ejemplo:{' '}
+                <em>&quot;Lic. Diana Makk - Nutricionista&quot;</em> o{' '}
+                <em>
+                  &quot;Lic. García Paz - Centro de Nutrición Recoleta&quot;
+                </em>
+                .
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name='dob'
-          render={({ field }) => (
-            <FormItem className='flex flex-col'>
-              <FormLabel>Date of birth</FormLabel>
-              <DatePicker selected={field.value} onSelect={field.onChange} />
-              <FormDescription>
-                Your date of birth is used to calculate your age.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name='language'
-          render={({ field }) => (
-            <FormItem className='flex flex-col'>
-              <FormLabel>Language</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant='outline'
-                      role='combobox'
-                      className={cn(
-                        'w-50 justify-between',
-                        !field.value && 'text-muted-foreground'
-                      )}
-                    >
-                      {field.value
-                        ? languages.find(
-                            (language) => language.value === field.value
-                          )?.label
-                        : 'Select language'}
-                      <CaretSortIcon className='ms-2 h-4 w-4 shrink-0 opacity-50' />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className='w-50 p-0'>
-                  <Command>
-                    <CommandInput placeholder='Search language...' />
-                    <CommandEmpty>No language found.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandList>
-                        {languages.map((language) => (
-                          <CommandItem
-                            value={language.label}
-                            key={language.value}
-                            onSelect={() => {
-                              form.setValue('language', language.value)
-                            }}
-                          >
-                            <CheckIcon
-                              className={cn(
-                                'size-4',
-                                language.value === field.value
-                                  ? 'opacity-100'
-                                  : 'opacity-0'
-                              )}
-                            />
-                            {language.label}
-                          </CommandItem>
-                        ))}
-                      </CommandList>
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <FormDescription>
-                This is the language that will be used in the dashboard.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type='submit'>Update account</Button>
+
+        {displaySignature.trim() && (
+          <div className='rounded-md border bg-muted/40 px-4 py-3 space-y-1'>
+            <p className='text-xs text-muted-foreground'>
+              Vista previa en el reporte:
+            </p>
+            <p className='text-sm font-medium'>{displaySignature.trim()}</p>
+          </div>
+        )}
+
+        <Button type='submit' disabled={isSaving}>
+          {isSaving ? 'Guardando…' : 'Guardar firma'}
+        </Button>
       </form>
     </Form>
   )
