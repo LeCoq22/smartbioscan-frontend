@@ -32,8 +32,6 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 )
 
-// ── TEMPORAL: nutri_id hardcodeado hasta implementar Supabase Auth ──
-const NUTRI_ID = 'e1883327-d219-4ba5-a305-0135efb2ab57'
 
 interface Measurement {
   id: string
@@ -105,15 +103,30 @@ function PatientReportsPage() {
 
   async function handleSync() {
     setSyncing(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      await supabase.auth.signOut()
+      navigate({ to: '/sign-in' })
+      setSyncing(false)
+      return
+    }
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/patients/${patientId}/sync-csvs`,
         {
           method: 'POST',
-          headers: { 'X-Nutri-Id': NUTRI_ID },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'X-Nutri-Id': session.user.id,
+          },
         }
       )
       const data = await res.json().catch(() => ({}))
+      if (res.status === 401) {
+        await supabase.auth.signOut()
+        navigate({ to: '/sign-in' })
+        return
+      }
       if (!res.ok) {
         toast.error(apiErrorMessage(res.status, data, 'Error al sincronizar'))
         return
@@ -131,16 +144,29 @@ function PatientReportsPage() {
 
   async function handleGenerateReport(measurementDate: string) {
     setGeneratingFor(measurementDate)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      await supabase.auth.signOut()
+      navigate({ to: '/sign-in' })
+      setGeneratingFor(null)
+      return
+    }
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/reports/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Nutri-Id': NUTRI_ID,
+          Authorization: `Bearer ${session.access_token}`,
+          'X-Nutri-Id': session.user.id,
         },
         body: JSON.stringify({ patient_id: patientId, measurement_date: measurementDate }),
       })
       const data = await res.json().catch(() => ({}))
+      if (res.status === 401) {
+        await supabase.auth.signOut()
+        navigate({ to: '/sign-in' })
+        return
+      }
       if (!res.ok) {
         toast.error(apiErrorMessage(res.status, data, 'Error al generar el reporte'))
         return
@@ -170,18 +196,36 @@ function PatientReportsPage() {
         return next
       })
     }
+    const { data: { session } } = await supabase.auth.getSession()
+    const nutriId = session?.user.id ?? ''
     window.open(
-      `${import.meta.env.VITE_API_URL}/reports/${reportId}/html?nutri_id=${NUTRI_ID}`,
+      `${import.meta.env.VITE_API_URL}/reports/${reportId}/html?nutri_id=${nutriId}`,
       '_blank'
     )
   }
 
   async function handleDownloadPdf(reportId: string, measurementDate: string) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      await supabase.auth.signOut()
+      navigate({ to: '/sign-in' })
+      return
+    }
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/reports/${reportId}/pdf`,
-        { headers: { 'X-Nutri-Id': NUTRI_ID } }
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'X-Nutri-Id': session.user.id,
+          },
+        }
       )
+      if (res.status === 401) {
+        await supabase.auth.signOut()
+        navigate({ to: '/sign-in' })
+        return
+      }
       if (!res.ok) {
         toast.error('No se pudo descargar el PDF')
         return

@@ -53,8 +53,6 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 )
 
-// ── TEMPORAL: nutri_id hardcodeado hasta implementar Supabase Auth ──
-const NUTRI_ID = 'e1883327-d219-4ba5-a305-0135efb2ab57'
 
 interface Patient {
   id: string
@@ -153,6 +151,12 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
     setProfiles([])
     setSelectedProfileId('')
     setError(null)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      toast.error('Sesión expirada, volvé a iniciar sesión')
+      setVerifyStatus('idle')
+      return
+    }
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/patients/verify-credentials`,
@@ -160,7 +164,8 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Nutri-Id': NUTRI_ID,
+            Authorization: `Bearer ${session.access_token}`,
+            'X-Nutri-Id': session.user.id,
           },
           body: JSON.stringify({
             tanita_email: form.tanita_email,
@@ -168,6 +173,12 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
           }),
         }
       )
+
+      if (res.status === 401) {
+        await supabase.auth.signOut()
+        navigate({ to: '/sign-in' })
+        return
+      }
 
       if (res.status >= 500) {
         setVerifyStatus('idle')
@@ -186,7 +197,6 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
       }
 
       if (
-        res.status === 401 ||
         !res.ok ||
         data?.error === 'invalid_credentials' ||
         !data?.ok
@@ -213,12 +223,19 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
     e.preventDefault()
     setSaving(true)
     setError(null)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      toast.error('Sesión expirada, volvé a iniciar sesión')
+      setSaving(false)
+      return
+    }
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/patients`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Nutri-Id': NUTRI_ID,
+          Authorization: `Bearer ${session.access_token}`,
+          'X-Nutri-Id': session.user.id,
         },
         body: JSON.stringify({
           full_name:           form.full_name,
@@ -227,6 +244,11 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
           mytanita_profile_id: selectedProfileId || null,
         }),
       })
+      if (res.status === 401) {
+        await supabase.auth.signOut()
+        navigate({ to: '/sign-in' })
+        return
+      }
       const resData = await res.json().catch(() => ({}))
       if (res.ok) {
         const newPatientId: string = resData.patient_id
@@ -597,6 +619,7 @@ function DeletePatientDialog({
   patient: Patient
   onDeleted: () => void
 }) {
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<1 | 2>(1)
   const [confirmText, setConfirmText] = useState('')
@@ -617,14 +640,29 @@ function DeletePatientDialog({
 
   async function handleDelete() {
     setDeleting(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      await supabase.auth.signOut()
+      navigate({ to: '/sign-in' })
+      setDeleting(false)
+      return
+    }
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/patients/${patient.id}`,
         {
           method: 'DELETE',
-          headers: { 'X-Nutri-Id': NUTRI_ID },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'X-Nutri-Id': session.user.id,
+          },
         }
       )
+      if (res.status === 401) {
+        await supabase.auth.signOut()
+        navigate({ to: '/sign-in' })
+        return
+      }
       if (res.ok) {
         setOpen(false)
         onDeleted()
@@ -751,10 +789,15 @@ export default function PatientsPage() {
 
   async function loadPatients() {
     setLoading(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      navigate({ to: '/sign-in' })
+      return
+    }
     const { data, error } = await supabase
       .from('patients')
       .select('*, tanita_credentials(tanita_email, last_scrape_status, last_scraped_at)')
-      .eq('nutri_id', NUTRI_ID)
+      .eq('nutri_id', session.user.id)
       .eq('is_active', true)
       .order('full_name')
 
