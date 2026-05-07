@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/card'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 
 function useDashboardStats() {
@@ -78,7 +77,6 @@ export function Dashboard() {
   return (
     <>
       <Header>
-        <Search />
         <ThemeSwitch />
       </Header>
 
