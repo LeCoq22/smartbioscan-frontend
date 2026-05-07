@@ -51,7 +51,7 @@ export function NutrisSection() {
       const { data, error } = await supabase
         .from('nutris')
         .select(
-          'id, full_name, email, subscription_type, subscription_status, reports_total, reports_this_month, max_reports_month'
+          'id, full_name, email, subscription_type, subscription_status, is_suspended, reports_total, reports_this_month, max_reports_month'
         )
         .neq('role', 'admin')
       if (error) throw error
@@ -89,19 +89,34 @@ export function NutrisSection() {
     }
   }
 
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase
-        .from('nutris')
-        .update({ subscription_status: status })
-        .eq('id', id)
-      if (error) throw error
+  const updateSuspension = useMutation({
+    mutationFn: async ({ id, suspend }: { id: string; suspend: boolean }) => {
+      if (suspend) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user?.id) throw new Error('No hay sesión activa')
+        const { error } = await supabase
+          .from('nutris')
+          .update({
+            is_suspended: true,
+            suspended_at: new Date().toISOString(),
+            suspended_by: user.id,
+          })
+          .eq('id', id)
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('nutris')
+          .update({ is_suspended: false, suspended_at: null, suspended_by: null })
+          .eq('id', id)
+        if (error) throw error
+      }
     },
-    onSuccess: (_, { status }) => {
-      toast.success(status === 'suspended' ? 'Nutri suspendido' : 'Nutri reactivado')
+    onSuccess: (_, { suspend }) => {
+      toast.success(suspend ? 'Nutri suspendido' : 'Nutri reactivado')
       void queryClient.invalidateQueries({ queryKey: ['admin-nutris'] })
     },
-    onError: () => toast.error('Error al actualizar estado'),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : 'Error al actualizar estado'),
   })
 
   function SortIcon({ field }: { field: SortKey }) {
@@ -133,10 +148,20 @@ export function NutrisSection() {
     )
   }
 
-  const statusBadge = (status: string) => {
-    if (status === 'active') return <Badge className='bg-green-600'>Activo</Badge>
-    if (status === 'suspended') return <Badge variant='destructive'>Suspendido</Badge>
-    return <Badge variant='secondary'>Pendiente</Badge>
+  const statusBadge = (isSuspended: boolean, subscriptionStatus: string | null) => {
+    if (isSuspended) return <Badge variant='destructive'>Suspendido</Badge>
+    switch (subscriptionStatus) {
+      case 'active':
+        return <Badge className='bg-green-600 text-white'>Activo</Badge>
+      case 'expired':
+        return <Badge variant='secondary'>Vencido</Badge>
+      case 'cancelled':
+        return <Badge variant='secondary'>Cancelado</Badge>
+      case 'pending_payment':
+        return <Badge className='bg-yellow-500 text-white'>Pago pendiente</Badge>
+      default:
+        return <Badge variant='secondary'>{subscriptionStatus ?? '—'}</Badge>
+    }
   }
 
   return (
@@ -176,13 +201,13 @@ export function NutrisSection() {
                 <TableCell className='capitalize'>
                   {nutri.subscription_type ?? '—'}
                 </TableCell>
-                <TableCell>{statusBadge(nutri.subscription_status ?? '')}</TableCell>
+                <TableCell>{statusBadge(nutri.is_suspended ?? false, nutri.subscription_status ?? null)}</TableCell>
                 <TableCell>{nutri.reports_total ?? 0}</TableCell>
                 <TableCell>{nutri.reports_this_month ?? 0}</TableCell>
                 <TableCell>{nutri.max_reports_month ?? 0}</TableCell>
                 <TableCell>{fmt(nutri.last_sign_in_at)}</TableCell>
                 <TableCell>
-                  {nutri.subscription_status === 'active' ? (
+                  {!nutri.is_suspended ? (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button size='sm' variant='destructive'>
@@ -202,10 +227,7 @@ export function NutrisSection() {
                           <AlertDialogAction
                             className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
                             onClick={() =>
-                              updateStatus.mutate({
-                                id: nutri.id,
-                                status: 'suspended',
-                              })
+                              updateSuspension.mutate({ id: nutri.id, suspend: true })
                             }
                           >
                             Suspender
@@ -213,17 +235,17 @@ export function NutrisSection() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  ) : nutri.subscription_status === 'suspended' ? (
+                  ) : (
                     <Button
                       size='sm'
-                      disabled={updateStatus.isPending}
+                      disabled={updateSuspension.isPending}
                       onClick={() =>
-                        updateStatus.mutate({ id: nutri.id, status: 'active' })
+                        updateSuspension.mutate({ id: nutri.id, suspend: false })
                       }
                     >
                       Reactivar
                     </Button>
-                  ) : null}
+                  )}
                 </TableCell>
               </TableRow>
             ))

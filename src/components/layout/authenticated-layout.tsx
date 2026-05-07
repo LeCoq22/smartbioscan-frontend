@@ -26,12 +26,12 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       if (!session) return { suspended: false, maintenance: false, maintenanceMessage: '', isAdmin: false }
 
       const [nutriRes, settingsRes] = await Promise.all([
-        supabase.from('nutris').select('subscription_status, role').eq('id', session.user.id).single(),
+        supabase.from('nutris').select('is_suspended, role').eq('id', session.user.id).single(),
         supabase.from('app_settings').select('is_maintenance, maintenance_message').eq('id', 1).single(),
       ])
 
       return {
-        suspended: nutriRes.data?.subscription_status === 'suspended',
+        suspended: nutriRes.data?.is_suspended === true,
         isAdmin: nutriRes.data?.role === 'admin',
         maintenance: settingsRes.data?.is_maintenance ?? false,
         maintenanceMessage: settingsRes.data?.maintenance_message ?? 'Estamos haciendo mejoras. Volvemos en unos minutos.',
@@ -48,7 +48,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     )
   }
 
-  if (data?.suspended) return <CuentaSuspendida />
+  if (data?.suspended && !data?.isAdmin) return <CuentaSuspendida />
   if (data?.maintenance && !data?.isAdmin) return <PantallaMantenimiento message={data.maintenanceMessage} />
 
   return (
