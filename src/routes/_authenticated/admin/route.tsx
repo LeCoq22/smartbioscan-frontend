@@ -2,13 +2,19 @@ import { useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
+import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
 import { AdminPanel } from '@/features/admin'
 
+const TAB_VALUES = ['waitlist', 'nutris', 'metricas', 'crear', 'mantenimiento'] as const
+type AdminTab = (typeof TAB_VALUES)[number]
+
+const adminSearchSchema = z.object({
+  tab: z.enum(TAB_VALUES).optional().catch('waitlist'),
+})
+
 export const Route = createFileRoute('/_authenticated/admin')({
-  validateSearch: (search: Record<string, unknown>) => ({
-    tab: typeof search.tab === 'string' ? search.tab : 'waitlist',
-  }),
+  validateSearch: adminSearchSchema,
   component: AdminRoute,
 })
 
@@ -51,8 +57,8 @@ function AdminRoute() {
 
   return (
     <AdminPanel
-      tab={tab}
-      onTabChange={(t) => void navigate({ search: (prev) => ({ ...prev, tab: t }) })}
+      tab={tab ?? 'waitlist'}
+      onTabChange={(t) => void navigate({ to: '/admin', search: { tab: t as AdminTab } })}
     />
   )
 }
