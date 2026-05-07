@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { SmartBioScanLogo } from '@/assets/smartbioscan-logo'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 import { CheckCircle2, XCircle, Circle } from 'lucide-react'
 
