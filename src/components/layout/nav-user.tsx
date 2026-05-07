@@ -95,7 +95,6 @@ export function NavUser() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {/* TODO: Mi perfil — link a /settings/profile cuando esté disponible */}
               {/* TODO: Suscripción — link a /planes cuando esté disponible */}
               <DropdownMenuItem
                 variant='destructive'

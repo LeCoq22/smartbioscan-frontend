@@ -49,9 +49,7 @@ const data = {
           title: 'Ajustes',
           icon: Settings2,
           items: [
-            { title: 'Perfil', url: '/settings' },
-            { title: 'Cuenta', url: '/settings/account' },
-            { title: 'Apariencia', url: '/settings/appearance' },
+            { title: 'Mi cuenta', url: '/settings' },
           ],
         },
         {

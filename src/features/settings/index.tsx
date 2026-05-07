@@ -1,68 +1,52 @@
-import { Outlet } from '@tanstack/react-router'
-import { Monitor, Bell, Palette, Wrench, UserCog } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import { Separator } from '@/components/ui/separator'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { SidebarNav } from './components/sidebar-nav'
-
-const sidebarNavItems = [
-  {
-    title: 'Profile',
-    href: '/settings',
-    icon: <UserCog size={18} />,
-  },
-  {
-    title: 'Account',
-    href: '/settings/account',
-    icon: <Wrench size={18} />,
-  },
-  {
-    title: 'Appearance',
-    href: '/settings/appearance',
-    icon: <Palette size={18} />,
-  },
-  {
-    title: 'Notifications',
-    href: '/settings/notifications',
-    icon: <Bell size={18} />,
-  },
-  {
-    title: 'Display',
-    href: '/settings/display',
-    icon: <Monitor size={18} />,
-  },
-]
+import { AccountForm } from './account/account-form'
 
 export function Settings() {
+  const [email, setEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      setEmail(session?.user.email ?? null)
+    })
+  }, [])
+
   return (
     <>
-      {/* ===== Top Heading ===== */}
       <Header>
         <Search className='me-auto' />
         <ThemeSwitch />
         <ConfigDrawer />
       </Header>
 
-      <Main fixed>
+      <Main>
         <div className='space-y-0.5'>
           <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
-            Settings
+            Mi cuenta
           </h1>
-          <p className='text-muted-foreground'>
-            Manage your account settings and set e-mail preferences.
+          <p className='text-muted-foreground text-sm'>
+            Configurá tu perfil y preferencias.
           </p>
         </div>
         <Separator className='my-4 lg:my-6' />
-        <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12'>
-          <aside className='top-0 lg:sticky lg:w-1/5'>
-            <SidebarNav items={sidebarNavItems} />
-          </aside>
-          <div className='flex w-full overflow-y-hidden p-1'>
-            <Outlet />
+
+        <div className='max-w-xl space-y-6'>
+          <div className='space-y-1'>
+            <p className='text-sm font-medium leading-none'>Email</p>
+            <p className='text-sm text-muted-foreground'>
+              {email ?? '—'}
+            </p>
           </div>
+
+          <Separator />
+
+          <AccountForm />
         </div>
       </Main>
     </>

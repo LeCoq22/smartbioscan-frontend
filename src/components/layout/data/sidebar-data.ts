@@ -39,13 +39,9 @@ export const sidebarData: SidebarData = {
       title: 'Configuración',
       items: [
         {
-          title: 'Ajustes',
+          title: 'Mi cuenta',
+          url: '/settings',
           icon: Settings2,
-          items: [
-            { title: 'Perfil', url: '/settings' },
-            { title: 'Cuenta', url: '/settings/account' },
-            { title: 'Apariencia', url: '/settings/appearance' },
-          ],
         },
         {
           title: 'Ayuda',
