@@ -25,9 +25,6 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 )
 
-// ── TEMPORAL: nutri_id hardcodeado hasta implementar Supabase Auth ──
-const NUTRI_ID = 'e1883327-d219-4ba5-a305-0135efb2ab57'
-
 interface Report {
   id: string
   measurement_date: string
@@ -49,13 +46,19 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [nutriId, setNutriId] = useState('')
 
   useEffect(() => {
     void (async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return setLoading(false)
+      const currentNutriId = session.user.id
+      setNutriId(currentNutriId)
+
       const { data, error } = await supabase
         .from('reports')
         .select('*, patients(full_name, sex)')
-        .eq('nutri_id', NUTRI_ID)
+        .eq('nutri_id', currentNutriId)
         .order('generated_at', { ascending: false })
         .limit(100)
 
@@ -175,7 +178,7 @@ export default function ReportsPage() {
                             variant='outline'
                             title='Ver reporte en el browser'
                             onClick={() => window.open(
-                              `${import.meta.env.VITE_API_URL}/reports/${report.id}/html?nutri_id=${NUTRI_ID}`,
+                              `${import.meta.env.VITE_API_URL}/reports/${report.id}/html?nutri_id=${nutriId}`,
                               '_blank'
                             )}
                           >

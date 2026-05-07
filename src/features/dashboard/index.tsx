@@ -13,25 +13,27 @@ import { Main } from '@/components/layout/main'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 
-const NUTRI_ID = 'e1883327-d219-4ba5-a305-0135efb2ab57'
-
 function useDashboardStats() {
   return useQuery({
-    queryKey: ['dashboard-stats', NUTRI_ID],
+    queryKey: ['dashboard-stats'],
     queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('No autenticado')
+      const nutriId = session.user.id
+
       const [patientsRes, reportsRes, nutriRes] = await Promise.all([
         supabase
           .from('patients')
           .select('*', { count: 'exact', head: true })
-          .eq('nutri_id', NUTRI_ID),
+          .eq('nutri_id', nutriId),
         supabase
           .from('reports')
           .select('*', { count: 'exact', head: true })
-          .eq('nutri_id', NUTRI_ID),
+          .eq('nutri_id', nutriId),
         supabase
           .from('nutris')
           .select('subscription_until')
-          .eq('id', NUTRI_ID)
+          .eq('id', nutriId)
           .single(),
       ])
       return {
