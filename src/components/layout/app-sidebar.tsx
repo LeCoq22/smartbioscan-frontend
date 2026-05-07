@@ -5,8 +5,11 @@ import {
   FileText,
   Settings2,
   HelpCircle,
+  ShieldCheck,
 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { SmartBioScanIcon } from '@/assets/smartbioscan-logo'
+import { supabase } from '@/lib/supabase'
 import { NavGroup } from '@/components/layout/nav-group'
 import { NavUser } from '@/components/layout/nav-user'
 import {
@@ -20,26 +23,32 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 
-const data = {
-  navGroups: [
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { data: role } = useQuery({
+    queryKey: ['user-role'],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return null
+      const { data } = await supabase
+        .from('nutris')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+      return data?.role ?? null
+    },
+    staleTime: Infinity,
+  })
+
+  const isAdmin = role === 'admin'
+
+  const navGroups = [
     {
       title: 'Principal',
       items: [
-        {
-          title: 'Dashboard',
-          url: '/',
-          icon: LayoutDashboard,
-        },
-        {
-          title: 'Pacientes',
-          url: '/patients',
-          icon: Users,
-        },
-        {
-          title: 'Reportes',
-          url: '/reports',
-          icon: FileText,
-        },
+        { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+        { title: 'Pacientes', url: '/patients', icon: Users },
+        { title: 'Reportes', url: '/reports', icon: FileText },
+        ...(isAdmin ? [{ title: 'Admin', url: '/admin', icon: ShieldCheck }] : []),
       ],
     },
     {
@@ -48,21 +57,13 @@ const data = {
         {
           title: 'Ajustes',
           icon: Settings2,
-          items: [
-            { title: 'Mi cuenta', url: '/settings' },
-          ],
+          items: [{ title: 'Mi cuenta', url: '/settings' }],
         },
-        {
-          title: 'Ayuda',
-          url: '/help-center',
-          icon: HelpCircle,
-        },
+        { title: 'Ayuda', url: '/help-center', icon: HelpCircle },
       ],
     },
-  ],
-}
+  ]
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible='icon' {...props}>
       <SidebarHeader>
@@ -81,8 +82,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {data.navGroups.map((props) => (
-          <NavGroup key={props.title} {...props} />
+        {navGroups.map((group) => (
+          <NavGroup key={group.title} {...group} />
         ))}
       </SidebarContent>
       <SidebarFooter>
