@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PasswordInput } from '@/components/password-input'
 import {
   Select,
   SelectContent,
@@ -334,9 +335,8 @@ function NewPatientDialog({ onCreated }: { onCreated: () => void }) {
           </div>
           <div className='space-y-1'>
             <Label htmlFor='tanita_password'>Contraseña MyTanita *</Label>
-            <Input
+            <PasswordInput
               id='tanita_password'
-              type='password'
               value={form.tanita_password}
               onChange={field('tanita_password')}
               placeholder='••••••••'

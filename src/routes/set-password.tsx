@@ -183,8 +183,7 @@ function SetPasswordPage() {
               <label className='text-sm font-medium leading-none'>
                 Confirmar contraseña
               </label>
-              <Input
-                type='password'
+              <PasswordInput
                 placeholder='••••••••'
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
