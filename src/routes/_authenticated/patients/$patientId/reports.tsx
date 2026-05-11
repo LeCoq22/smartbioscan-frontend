@@ -98,7 +98,11 @@ function PatientReportsPage() {
     if (status === 404) return 'Paciente no encontrado o sin credenciales configuradas'
     if (status === 429) return String(data.detail ?? 'Quota de reportes agotada')
     if (status >= 500) return 'Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.'
-    return String(data.detail ?? data.error ?? fallback)
+    const detail = data.detail ?? data.error
+    if (detail && typeof detail === 'object' && typeof (detail as Record<string, unknown>).message === 'string') {
+      return (detail as Record<string, unknown>).message as string
+    }
+    return String(detail ?? fallback)
   }
 
   async function handleSync() {
