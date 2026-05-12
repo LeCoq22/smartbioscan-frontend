@@ -94,15 +94,18 @@ function PatientReportsPage() {
   }
 
   function apiErrorMessage(status: number, data: Record<string, unknown>, fallback: string): string {
+    function extractDetail(val: unknown): string | null {
+      if (!val) return null
+      if (typeof val === 'string') return val
+      if (typeof val === 'object' && typeof (val as Record<string, unknown>).message === 'string')
+        return (val as Record<string, unknown>).message as string
+      return null
+    }
     if (status === 401 || status === 403) return 'Sesión expirada, volvé a iniciar sesión'
     if (status === 404) return 'Paciente no encontrado o sin credenciales configuradas'
-    if (status === 429) return String(data.detail ?? 'Quota de reportes agotada')
+    if (status === 429) return extractDetail(data.detail) ?? 'Quota de reportes agotada'
     if (status >= 500) return 'Error del servidor, intentá de nuevo en unos segundos. Si persiste, contactá soporte.'
-    const detail = data.detail ?? data.error
-    if (detail && typeof detail === 'object' && typeof (detail as Record<string, unknown>).message === 'string') {
-      return (detail as Record<string, unknown>).message as string
-    }
-    return String(detail ?? fallback)
+    return extractDetail(data.detail) ?? extractDetail(data.error) ?? fallback
   }
 
   async function handleSync() {
