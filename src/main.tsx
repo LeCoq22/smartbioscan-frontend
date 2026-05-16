@@ -17,6 +17,11 @@ import { ThemeProvider } from './context/theme-provider'
 import { routeTree } from './routeTree.gen'
 // Styles
 import './styles/index.css'
+import { installErrorReporter } from '@/lib/error-reporter'
+
+// Instalar handlers globales de errores frontend (window.onerror,
+// unhandledrejection) — los reporta al backend para debug.
+installErrorReporter()
 
 const queryClient = new QueryClient({
   defaultOptions: {
