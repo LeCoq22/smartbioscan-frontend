@@ -7,6 +7,7 @@ import { MetricsSection } from './metrics'
 import { CreateNutriSection } from './create-nutri'
 import { MaintenanceSection } from './maintenance'
 import { RegenerateReportsSection } from './regenerate-reports'
+import { BackendErrorsSection } from './backend-errors'
 
 const TABS = [
   { value: 'waitlist', label: 'Waitlist' },
@@ -14,6 +15,7 @@ const TABS = [
   { value: 'metricas', label: 'Métricas' },
   { value: 'crear', label: 'Crear nutri' },
   { value: 'regenerar', label: 'Regenerar reportes' },
+  { value: 'errores', label: 'Errores backend' },
   { value: 'mantenimiento', label: 'Mantenimiento' },
 ]
 
@@ -58,6 +60,10 @@ export function AdminPanel({ tab, onTabChange }: AdminPanelProps) {
 
           <TabsContent value='regenerar'>
             <RegenerateReportsSection />
+          </TabsContent>
+
+          <TabsContent value='errores'>
+            <BackendErrorsSection />
           </TabsContent>
 
           <TabsContent value='mantenimiento'>

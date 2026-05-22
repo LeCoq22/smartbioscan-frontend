@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
 import { AdminPanel } from '@/features/admin'
 
-const TAB_VALUES = ['waitlist', 'nutris', 'metricas', 'crear', 'regenerar', 'mantenimiento'] as const
+const TAB_VALUES = ['waitlist', 'nutris', 'metricas', 'crear', 'regenerar', 'errores', 'mantenimiento'] as const
 type AdminTab = (typeof TAB_VALUES)[number]
 
 const adminSearchSchema = z.object({
