@@ -34,6 +34,7 @@ type SortKey =
   | 'reports_this_month'
   | 'max_reports_month'
   | 'last_sign_in_at'
+  | 'patient_count'
 
 type SortDir = 'asc' | 'desc'
 
@@ -42,7 +43,7 @@ const fmt = (iso: string | null | undefined) =>
 
 export function NutrisSection() {
   const queryClient = useQueryClient()
-  const [sortKey, setSortKey] = useState<SortKey>('reports_total')
+  const [sortKey, setSortKey] = useState<SortKey>('last_sign_in_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   const { data: nutris = [], isLoading } = useQuery({
@@ -67,11 +68,29 @@ export function NutrisSection() {
     },
   })
 
+  const { data: patientCounts = [] } = useQuery({
+    queryKey: ['nutris-patient-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('nutri_id')
+        .eq('is_active', true)
+      if (error) throw error
+      const counts = new Map<string, number>()
+      for (const p of data ?? []) {
+        counts.set(p.nutri_id, (counts.get(p.nutri_id) ?? 0) + 1)
+      }
+      return Array.from(counts.entries()).map(([id, count]) => ({ id, count }))
+    },
+  })
+
   const signInMap = new Map(signInData.map((r) => [r.id, r.last_sign_in_at]))
+  const patientCountMap = new Map(patientCounts.map((p) => [p.id, p.count]))
 
   const merged = nutris.map((n) => ({
     ...n,
     last_sign_in_at: signInMap.get(n.id) ?? null,
+    patient_count: patientCountMap.get(n.id) ?? 0,
   }))
 
   const sorted = [...merged].sort((a, b) => {
@@ -173,6 +192,7 @@ export function NutrisSection() {
             <SortHead label='Email' field='email' />
             <SortHead label='Tipo' field='subscription_type' />
             <SortHead label='Estado' field='subscription_status' />
+            <SortHead label='Pacientes' field='patient_count' />
             <SortHead label='Total rep.' field='reports_total' />
             <SortHead label='Este mes' field='reports_this_month' />
             <SortHead label='Máx/mes' field='max_reports_month' />
@@ -183,13 +203,13 @@ export function NutrisSection() {
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={9} className='text-center text-muted-foreground'>
+              <TableCell colSpan={10} className='text-center text-muted-foreground'>
                 Cargando…
               </TableCell>
             </TableRow>
           ) : sorted.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className='text-center text-muted-foreground'>
+              <TableCell colSpan={10} className='text-center text-muted-foreground'>
                 Sin nutris registrados
               </TableCell>
             </TableRow>
@@ -202,6 +222,7 @@ export function NutrisSection() {
                   {nutri.subscription_type ?? '—'}
                 </TableCell>
                 <TableCell>{statusBadge(nutri.is_suspended ?? false, nutri.subscription_status ?? null)}</TableCell>
+                <TableCell>{nutri.patient_count ?? 0}</TableCell>
                 <TableCell>{nutri.reports_total ?? 0}</TableCell>
                 <TableCell>{nutri.reports_this_month ?? 0}</TableCell>
                 <TableCell>{nutri.max_reports_month ?? 0}</TableCell>
