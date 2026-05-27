@@ -10,45 +10,54 @@ vi.mock('@tanstack/react-router', async (orig) => {
   return { ...actual, useNavigate: () => navigateMock }
 })
 
-vi.mock('@/lib/utils', async (orig) => ({
-  ...(await orig()),
-  sleep: vi.fn(() => Promise.resolve()),
-}))
-
 describe('ForgotPasswordForm', () => {
   let screen: RenderResult
   let emailInput: Locator
-  let continueButton: Locator
+  let submitButton: Locator
 
   beforeEach(async () => {
     vi.clearAllMocks()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              ok: true,
+              status: 'sent',
+              message: 'Te enviamos un email a a@b.com',
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          )
+        )
+      )
+    )
 
     screen = await render(<ForgotPasswordForm />)
     emailInput = screen.getByRole('textbox', { name: /^Email$/i })
-    continueButton = screen.getByRole('button', { name: /^Continue$/i })
+    submitButton = screen.getByRole('button', { name: /Enviar link de recuperación/i })
   })
 
-  it('renders email field and continue button', async () => {
+  it('renders email field and submit button', async () => {
     await expect.element(emailInput).toBeInTheDocument()
-    await expect.element(continueButton).toBeInTheDocument()
+    await expect.element(submitButton).toBeInTheDocument()
   })
 
   it('shows validation when submitting empty form', async () => {
-    await userEvent.click(continueButton)
+    await userEvent.click(submitButton)
     await expect
-      .element(screen.getByText(/^Please enter your email\.$/i))
+      .element(screen.getByText(/Ingresá un email válido\./i))
       .toBeInTheDocument()
   })
 
-  it('resets the form and navigates to /otp on success', async () => {
+  it('resets the form and navigates to /sign-in on sent', async () => {
     await userEvent.fill(emailInput, 'a@b.com')
-    await userEvent.click(continueButton)
+    await userEvent.click(submitButton)
 
     await vi.waitFor(() =>
-      expect(navigateMock).toHaveBeenCalledWith({ to: '/otp' })
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/sign-in' })
     )
 
-    // Form should reset on success
     await expect.element(emailInput).toHaveValue('')
   })
 })

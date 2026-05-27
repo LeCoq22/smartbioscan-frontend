@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ export function WaitlistSection() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending')
   const [rejectTarget, setRejectTarget] = useState<{ id: string; nombre: string } | null>(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [search, setSearch] = useState('')
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['admin-waitlist', statusFilter],
@@ -51,6 +53,16 @@ export function WaitlistSection() {
       if (error) throw error
       return data ?? []
     },
+  })
+
+  const filtered = rows.filter((row) => {
+    if (!search.trim()) return true
+    const q = search.trim().toLowerCase()
+    return (
+      (row.nombre ?? '').toLowerCase().includes(q) ||
+      (row.email ?? '').toLowerCase().includes(q) ||
+      (row.profesion ?? '').toLowerCase().includes(q)
+    )
   })
 
   const getToken = async () => {
@@ -103,7 +115,10 @@ export function WaitlistSection() {
     <div className='space-y-4'>
       <Tabs
         value={statusFilter}
-        onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+        onValueChange={(v) => {
+          setStatusFilter(v as StatusFilter)
+          setSearch('')
+        }}
       >
         <TabsList>
           {(Object.keys(STATUS_LABELS) as StatusFilter[]).map((s) => (
@@ -113,6 +128,20 @@ export function WaitlistSection() {
           ))}
         </TabsList>
       </Tabs>
+
+      <div className='flex items-center gap-2'>
+        <Input
+          placeholder='Buscar por nombre, email o profesión…'
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className='max-w-sm'
+        />
+        {search && (
+          <p className='text-sm text-muted-foreground'>
+            {filtered.length} {filtered.length === 1 ? 'resultado' : 'resultados'}
+          </p>
+        )}
+      </div>
 
       <div className='rounded-md border'>
         <Table>
@@ -132,14 +161,14 @@ export function WaitlistSection() {
                   Cargando…
                 </TableCell>
               </TableRow>
-            ) : rows.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className='text-center text-muted-foreground'>
-                  Sin registros
+                  {search ? 'Sin resultados para esa búsqueda' : 'Sin registros'}
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row) => (
+              filtered.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className='font-medium'>{row.nombre}</TableCell>
                   <TableCell>{row.email}</TableCell>

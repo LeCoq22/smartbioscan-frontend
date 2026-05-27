@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +46,7 @@ export function NutrisSection() {
   const queryClient = useQueryClient()
   const [sortKey, setSortKey] = useState<SortKey>('last_sign_in_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [search, setSearch] = useState('')
 
   const { data: nutris = [], isLoading } = useQuery({
     queryKey: ['admin-nutris'],
@@ -93,7 +95,16 @@ export function NutrisSection() {
     patient_count: patientCountMap.get(n.id) ?? 0,
   }))
 
-  const sorted = [...merged].sort((a, b) => {
+  const filtered = merged.filter((n) => {
+    if (!search.trim()) return true
+    const q = search.trim().toLowerCase()
+    return (
+      (n.full_name ?? '').toLowerCase().includes(q) ||
+      (n.email ?? '').toLowerCase().includes(q)
+    )
+  })
+
+  const sorted = [...filtered].sort((a, b) => {
     const av = a[sortKey] ?? ''
     const bv = b[sortKey] ?? ''
     const cmp = av < bv ? -1 : av > bv ? 1 : 0
@@ -184,7 +195,21 @@ export function NutrisSection() {
   }
 
   return (
-    <div className='rounded-md border'>
+    <div className='space-y-3'>
+      <div className='flex items-center gap-2'>
+        <Input
+          placeholder='Buscar por nombre o email…'
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className='max-w-sm'
+        />
+        {search && (
+          <p className='text-sm text-muted-foreground'>
+            {filtered.length} {filtered.length === 1 ? 'resultado' : 'resultados'}
+          </p>
+        )}
+      </div>
+      <div className='rounded-md border'>
       <Table>
         <TableHeader>
           <TableRow>
@@ -210,7 +235,7 @@ export function NutrisSection() {
           ) : sorted.length === 0 ? (
             <TableRow>
               <TableCell colSpan={10} className='text-center text-muted-foreground'>
-                Sin nutris registrados
+                {search ? 'Sin resultados para esa búsqueda' : 'Sin nutris registrados'}
               </TableCell>
             </TableRow>
           ) : (
@@ -273,6 +298,7 @@ export function NutrisSection() {
           )}
         </TableBody>
       </Table>
+    </div>
     </div>
   )
 }

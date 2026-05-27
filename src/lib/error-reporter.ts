@@ -31,6 +31,11 @@ function shouldReport(key: string): boolean {
   return true
 }
 
+// TODO: implementar detector de "promise hang" genérico para
+// monitorear cualquier await > N segundos como source='hang'.
+// Por ahora los hangs conocidos (Login.onSubmit, RootComponent.getSession)
+// reportan a /errors/frontend con source='hang' directamente desde el callsite.
+
 interface ReportErrorOptions {
   message: string
   stack?: string | null

@@ -18,6 +18,15 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`timeout:${label}`)), ms)
+    ),
+  ])
+}
+
 const formSchema = z.object({
   email: z
     .string()
@@ -53,43 +62,88 @@ export function Login() {
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    })
+    try {
+      const { error } = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        }),
+        8000,
+        'signInWithPassword'
+      )
 
-    if (error) {
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/auth/login-hint`,
-          {
+      if (error) {
+        try {
+          const res = await fetch(
+            `${import.meta.env.VITE_API_URL}/api/auth/login-hint`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: data.email }),
+            }
+          )
+          if (res.ok) {
+            const { hint } = await res.json()
+            if (hint === 'not_registered') {
+              toast.error('Email no registrado', {
+                description: 'No encontramos una cuenta con ese email. ¿Querés registrarte?',
+              })
+              setIsLoading(false)
+              return
+            }
+          }
+        } catch {
+          // fallback to generic
+        }
+        toast.error('Credenciales incorrectas', {
+          description: 'Revisá tu email y contraseña e intentá de nuevo.',
+        })
+        setIsLoading(false)
+        return
+      }
+
+      setIsLoading(false)
+      navigate({ to: '/', replace: true })
+    } catch (e) {
+      const msg = (e as Error)?.message ?? ''
+      if (msg.startsWith('timeout:')) {
+        // Sesión vieja en storage cuelga el login. Limpiamos y dejamos reintentar.
+        try {
+          await supabase.auth.signOut()
+        } catch {
+          /* noop */
+        }
+        try {
+          Object.keys(localStorage)
+            .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+            .forEach((k) => localStorage.removeItem(k))
+        } catch {
+          /* noop */
+        }
+        try {
+          await fetch(`${import.meta.env.VITE_API_URL}/errors/frontend`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: data.email }),
-          }
-        )
-        if (res.ok) {
-          const { hint } = await res.json()
-          if (hint === 'not_registered') {
-            toast.error('Email no registrado', {
-              description: 'No encontramos una cuenta con ese email. ¿Querés registrarte?',
-            })
-            setIsLoading(false)
-            return
-          }
+            body: JSON.stringify({
+              message: msg,
+              source: 'hang',
+              url: window.location.href,
+              user_agent: navigator.userAgent,
+              context: { where: 'Login.onSubmit', email: data.email },
+            }),
+          })
+        } catch {
+          /* noop */
         }
-      } catch {
-        // fallback to generic
+        toast.error('No pudimos iniciar sesión', {
+          description: 'Tu sesión anterior estaba corrupta. Limpiamos los datos, probá iniciar sesión de nuevo.',
+          duration: 10000,
+        })
+      } else {
+        toast.error('Error inesperado', { description: 'Intentá de nuevo en unos segundos.' })
       }
-      toast.error('Credenciales incorrectas', {
-        description: 'Revisá tu email y contraseña e intentá de nuevo.',
-      })
       setIsLoading(false)
-      return
     }
-
-    setIsLoading(false)
-    navigate({ to: '/', replace: true })
   }
 
   async function handleOAuth(provider: 'google' | 'facebook') {
@@ -114,6 +168,9 @@ export function Login() {
           <h1 className='text-xl font-semibold tracking-tight'>
             Panel de Nutricionistas
           </h1>
+          <p className='text-xs text-muted-foreground text-center -mt-1'>
+            Ingresá con tu email de nutricionista, el mismo con el que te registraste.
+          </p>
         </div>
 
         {/* Form */}
