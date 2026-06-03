@@ -18,7 +18,8 @@ function isPublicPath(pathname: string) {
     pathname === '/auth/callback' ||
     pathname === '/planes' ||
     pathname.startsWith('/planes/') ||
-    pathname === '/set-password'
+    pathname === '/set-password' ||
+    pathname === '/forgot-password'
   )
 }
 
