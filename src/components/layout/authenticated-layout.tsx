@@ -9,6 +9,7 @@ import { SearchProvider } from '@/context/search-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { SkipToMain } from '@/components/skip-to-main'
+import { BetaClosurePopup } from '@/components/layout/beta-closure-popup'
 import { CuentaSuspendida } from '@/components/layout/cuenta-suspendida'
 import { PantallaMantenimiento } from '@/components/layout/pantalla-mantenimiento'
 
@@ -23,16 +24,17 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     queryKey: ['session-checks'],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return { suspended: false, maintenance: false, maintenanceMessage: '', isAdmin: false }
+      if (!session) return { suspended: false, maintenance: false, maintenanceMessage: '', isAdmin: false, subscriptionType: null as string | null }
 
       const [nutriRes, settingsRes] = await Promise.all([
-        supabase.from('nutris').select('is_suspended, role').eq('id', session.user.id).single(),
+        supabase.from('nutris').select('is_suspended, role, subscription_type').eq('id', session.user.id).single(),
         supabase.from('app_settings').select('is_maintenance, maintenance_message').eq('id', 1).single(),
       ])
 
       return {
         suspended: nutriRes.data?.is_suspended === true,
         isAdmin: nutriRes.data?.role === 'admin',
+        subscriptionType: (nutriRes.data?.subscription_type as string | null) ?? null,
         maintenance: settingsRes.data?.is_maintenance ?? false,
         maintenanceMessage: settingsRes.data?.maintenance_message ?? 'Estamos haciendo mejoras. Volvemos en unos minutos.',
       }
@@ -68,6 +70,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           </SidebarInset>
         </SidebarProvider>
       </LayoutProvider>
+      <BetaClosurePopup subscriptionType={data?.subscriptionType} isAdmin={data?.isAdmin} />
     </SearchProvider>
   )
 }
