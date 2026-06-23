@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SetPasswordRouteImport } from './routes/set-password'
 import { Route as PlanesRouteImport } from './routes/planes'
+import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
@@ -38,6 +39,11 @@ const SetPasswordRoute = SetPasswordRouteImport.update({
 const PlanesRoute = PlanesRouteImport.update({
   id: '/planes',
   path: '/planes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -138,6 +144,7 @@ const AuthenticatedPatientsPatientIdReportsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/feedback': typeof FeedbackRoute
   '/planes': typeof PlanesRoute
   '/set-password': typeof SetPasswordRoute
   '/admin': typeof AuthenticatedAdminRouteRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/patients/$patientId/reports': typeof AuthenticatedPatientsPatientIdReportsRoute
 }
 export interface FileRoutesByTo {
+  '/feedback': typeof FeedbackRoute
   '/planes': typeof PlanesRoute
   '/set-password': typeof SetPasswordRoute
   '/admin': typeof AuthenticatedAdminRouteRoute
@@ -181,6 +189,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/feedback': typeof FeedbackRoute
   '/planes': typeof PlanesRoute
   '/set-password': typeof SetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/feedback'
     | '/planes'
     | '/set-password'
     | '/admin'
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/patients/$patientId/reports'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/feedback'
     | '/planes'
     | '/set-password'
     | '/admin'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/feedback'
     | '/planes'
     | '/set-password'
     | '/_authenticated/admin'
@@ -270,6 +282,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  FeedbackRoute: typeof FeedbackRoute
   PlanesRoute: typeof PlanesRoute
   SetPasswordRoute: typeof SetPasswordRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
@@ -297,6 +310,13 @@ declare module '@tanstack/react-router' {
       path: '/planes'
       fullPath: '/planes'
       preLoaderRoute: typeof PlanesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -456,6 +476,7 @@ const AuthenticatedRouteRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  FeedbackRoute: FeedbackRoute,
   PlanesRoute: PlanesRoute,
   SetPasswordRoute: SetPasswordRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
