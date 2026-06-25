@@ -31,6 +31,7 @@ type SortKey =
   | 'email'
   | 'subscription_type'
   | 'subscription_status'
+  | 'subscription_end'
   | 'reports_total'
   | 'reports_this_month'
   | 'max_reports_month'
@@ -41,6 +42,25 @@ type SortDir = 'asc' | 'desc'
 
 const fmt = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString('es-AR') : '—'
+
+// Plan legible derivado de subscription_type + max_reports_month
+// (30 = Básico, 100 = Plus). Si se agregan planes con otros cupos,
+// actualizar este mapeo. Fallback: subscription_type crudo.
+const planLabel = (
+  type: string | null | undefined,
+  maxReports: number | null | undefined
+): string => {
+  if (type === 'free_trial') return 'Trial'
+  if (type === 'beta') return 'Beta'
+  const tier = maxReports === 100 ? 'Plus' : maxReports === 30 ? 'Básico' : null
+  if (type === 'monthly' && tier) return `${tier} Mensual`
+  if (type === 'semestral' && tier) return `${tier} Semestral`
+  return type ?? '—'
+}
+
+const todayISO = new Date().toISOString().slice(0, 10)
+const isExpired = (iso: string | null | undefined) =>
+  !!iso && iso.slice(0, 10) < todayISO
 
 export function NutrisSection() {
   const queryClient = useQueryClient()
@@ -54,7 +74,7 @@ export function NutrisSection() {
       const { data, error } = await supabase
         .from('nutris')
         .select(
-          'id, full_name, email, subscription_type, subscription_status, is_suspended, reports_total, reports_this_month, max_reports_month'
+          'id, full_name, email, subscription_type, subscription_status, subscription_end, is_suspended, reports_total, reports_this_month, max_reports_month'
         )
         .neq('role', 'admin')
       if (error) throw error
@@ -215,8 +235,9 @@ export function NutrisSection() {
           <TableRow>
             <SortHead label='Nombre' field='full_name' />
             <SortHead label='Email' field='email' />
-            <SortHead label='Tipo' field='subscription_type' />
+            <SortHead label='Plan' field='subscription_type' />
             <SortHead label='Estado' field='subscription_status' />
+            <SortHead label='Vence' field='subscription_end' />
             <SortHead label='Pacientes' field='patient_count' />
             <SortHead label='Total rep.' field='reports_total' />
             <SortHead label='Este mes' field='reports_this_month' />
@@ -228,13 +249,13 @@ export function NutrisSection() {
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={10} className='text-center text-muted-foreground'>
+              <TableCell colSpan={11} className='text-center text-muted-foreground'>
                 Cargando…
               </TableCell>
             </TableRow>
           ) : sorted.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={10} className='text-center text-muted-foreground'>
+              <TableCell colSpan={11} className='text-center text-muted-foreground'>
                 {search ? 'Sin resultados para esa búsqueda' : 'Sin nutris registrados'}
               </TableCell>
             </TableRow>
@@ -243,10 +264,19 @@ export function NutrisSection() {
               <TableRow key={nutri.id}>
                 <TableCell className='font-medium'>{nutri.full_name}</TableCell>
                 <TableCell>{nutri.email}</TableCell>
-                <TableCell className='capitalize'>
-                  {nutri.subscription_type ?? '—'}
+                <TableCell className='whitespace-nowrap'>
+                  {planLabel(nutri.subscription_type, nutri.max_reports_month)}
                 </TableCell>
                 <TableCell>{statusBadge(nutri.is_suspended ?? false, nutri.subscription_status ?? null)}</TableCell>
+                <TableCell
+                  className={
+                    isExpired(nutri.subscription_end)
+                      ? 'whitespace-nowrap text-destructive font-medium'
+                      : 'whitespace-nowrap'
+                  }
+                >
+                  {fmt(nutri.subscription_end)}
+                </TableCell>
                 <TableCell>{nutri.patient_count ?? 0}</TableCell>
                 <TableCell>{nutri.reports_total ?? 0}</TableCell>
                 <TableCell>{nutri.reports_this_month ?? 0}</TableCell>
