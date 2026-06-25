@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { SmartBioScanLogo } from '@/assets/smartbioscan-logo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Card,
   CardContent,
@@ -91,6 +92,9 @@ function getPlanDisplayName(subType: string, maxReports: number): string {
 export function Planes() {
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null)
   const [subscription, setSubscription] = useState<NutriSubscription | null>(null)
+  // Email de la cuenta de MercadoPago (solo para la minoría cuyo email MP difiere).
+  const [showMpEmail, setShowMpEmail] = useState(false)
+  const [mpEmail, setMpEmail] = useState('')
 
   useEffect(() => {
     // Limpiar ?status de MP y mostrar toast correspondiente
@@ -196,7 +200,10 @@ export function Planes() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ plan_id: apiPlanId }),
+        body: JSON.stringify({
+          plan_id: apiPlanId,
+          payer_email: mpEmail.trim() || undefined,
+        }),
       })
       if (!res.ok) {
         const err: { detail?: string } = await res.json().catch(() => ({}))
@@ -317,6 +324,34 @@ export function Planes() {
               </div>
             )
           })}
+        </div>
+
+        <div className='mx-auto max-w-md text-center'>
+          {!showMpEmail ? (
+            <button
+              type='button'
+              onClick={() => setShowMpEmail(true)}
+              className='text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground'
+            >
+              ¿Tu cuenta de MercadoPago usa otro email? (opcional)
+            </button>
+          ) : (
+            <div className='space-y-1.5 text-left'>
+              <label className='text-xs font-medium'>
+                Email de tu cuenta de MercadoPago (opcional)
+              </label>
+              <Input
+                type='email'
+                value={mpEmail}
+                onChange={(e) => setMpEmail(e.target.value)}
+                placeholder='tu-email@cuenta-mercadopago.com'
+              />
+              <p className='text-xs text-muted-foreground'>
+                Completá esto solo si tu cuenta de MercadoPago está registrada con un
+                email distinto al que usás en SmartBioScan. Si no, dejalo vacío.
+              </p>
+            </div>
+          )}
         </div>
 
         <p className='text-center text-sm text-muted-foreground'>
