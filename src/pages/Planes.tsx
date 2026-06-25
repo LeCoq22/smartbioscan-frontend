@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
+import { Loader2, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { SmartBioScanLogo } from '@/assets/smartbioscan-logo'
@@ -241,6 +241,7 @@ export function Planes() {
           </div>
         )}
 
+        <div className='space-y-5'>
         <div className='grid grid-cols-1 gap-6 pt-5 sm:grid-cols-2 xl:grid-cols-4'>
           {plans.map((plan) => {
             const isCurrent = plan.apiPlanId === activePlanId
@@ -326,32 +327,34 @@ export function Planes() {
           })}
         </div>
 
-        <div className='mx-auto max-w-md text-center'>
-          {!showMpEmail ? (
-            <button
-              type='button'
-              onClick={() => setShowMpEmail(true)}
-              className='text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground'
-            >
-              ¿Tu cuenta de MercadoPago usa otro email? (opcional)
-            </button>
-          ) : (
-            <div className='space-y-1.5 text-left'>
-              <label className='text-xs font-medium'>
-                Email de tu cuenta de MercadoPago (opcional)
-              </label>
-              <Input
-                type='email'
-                value={mpEmail}
-                onChange={(e) => setMpEmail(e.target.value)}
-                placeholder='tu-email@cuenta-mercadopago.com'
-              />
-              <p className='text-xs text-muted-foreground'>
-                Completá esto solo si tu cuenta de MercadoPago está registrada con un
-                email distinto al que usás en SmartBioScan. Si no, dejalo vacío.
-              </p>
-            </div>
-          )}
+          <div className='mx-auto max-w-md text-center'>
+            {!showMpEmail ? (
+              <button
+                type='button'
+                onClick={() => setShowMpEmail(true)}
+                className='inline-flex items-center gap-1.5 text-sm font-medium text-primary underline underline-offset-2 hover:text-primary/80'
+              >
+                <CreditCard className='h-4 w-4 shrink-0' />
+                ¿Tu cuenta de MercadoPago tiene un email distinto al de acá? Hacé clic para indicarlo (opcional)
+              </button>
+            ) : (
+              <div className='space-y-1.5 text-left'>
+                <label className='text-xs font-medium'>
+                  Email de tu cuenta de MercadoPago (opcional)
+                </label>
+                <Input
+                  type='email'
+                  value={mpEmail}
+                  onChange={(e) => setMpEmail(e.target.value)}
+                  placeholder='tu-email@cuenta-mercadopago.com'
+                />
+                <p className='text-xs text-muted-foreground'>
+                  Completá esto solo si tu cuenta de MercadoPago está registrada con un
+                  email distinto al que usás en SmartBioScan. Si no, dejalo vacío.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         <p className='text-center text-sm text-muted-foreground'>
