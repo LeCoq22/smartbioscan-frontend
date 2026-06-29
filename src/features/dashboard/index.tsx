@@ -12,6 +12,60 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ThemeSwitch } from '@/components/theme-switch'
 
+type NutriStats = {
+  subscription_end: string | null
+  subscription_type: string | null
+  subscription_start: string | null
+  reports_this_month: number | null
+  max_reports_month: number | null
+  reports_month_reset: string | null
+}
+
+// ── Helpers de fecha (date-only, sin desfase de timezone) ──
+function parseDateOnly(s: string): Date {
+  const [y, m, d] = s.slice(0, 10).split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+function startOfToday(): Date {
+  const n = new Date()
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate())
+}
+
+function addMonths(d: Date, months: number): Date {
+  const total = d.getMonth() + months
+  const year = d.getFullYear() + Math.floor(total / 12)
+  const month = ((total % 12) + 12) % 12
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  return new Date(year, month, Math.min(d.getDate(), lastDay))
+}
+
+// Espejo de public.cupo_cycle_start: aniversario mensual de `start` más reciente <= `today`.
+function cupoCycleStart(start: Date, today: Date): Date {
+  let n =
+    (today.getFullYear() - start.getFullYear()) * 12 +
+    (today.getMonth() - start.getMonth())
+  while (n > 0 && addMonths(start, n) > today) n--
+  return addMonths(start, n)
+}
+
+// Consumo EFECTIVO del período: si cruzó el aniversario y aún no generó, el contador
+// en la columna puede estar "stale". Replica la lógica del gate (solo monthly/semestral
+// resetean por aniversario; el resto acumula).
+function effectiveReportsThisMonth(n: NutriStats | null | undefined): number {
+  if (!n) return 0
+  const used = n.reports_this_month ?? 0
+  const resetsMonthly =
+    n.subscription_type === 'monthly' || n.subscription_type === 'semestral'
+  if (resetsMonthly && n.subscription_start) {
+    const cs = cupoCycleStart(parseDateOnly(n.subscription_start), startOfToday())
+    if (n.reports_month_reset == null || parseDateOnly(n.reports_month_reset) < cs) {
+      return 0
+    }
+  }
+  return used
+}
+
 function useDashboardStats() {
   return useQuery({
     queryKey: ['dashboard-stats'],
@@ -20,25 +74,25 @@ function useDashboardStats() {
       if (!session) throw new Error('No autenticado')
       const nutriId = session.user.id
 
-      const [patientsRes, reportsRes, nutriRes] = await Promise.all([
+      const [patientsRes, nutriRes] = await Promise.all([
         supabase
           .from('patients')
           .select('*', { count: 'exact', head: true })
           .eq('nutri_id', nutriId),
         supabase
-          .from('reports')
-          .select('*', { count: 'exact', head: true })
-          .eq('nutri_id', nutriId),
-        supabase
           .from('nutris')
-          .select('subscription_until')
+          .select(
+            'subscription_end, subscription_type, subscription_start, reports_this_month, max_reports_month, reports_month_reset'
+          )
           .eq('id', nutriId)
           .single(),
       ])
+      const n = nutriRes.data as NutriStats | null
       return {
         patients: patientsRes.count ?? 0,
-        reports: reportsRes.count ?? 0,
-        subscriptionUntil: nutriRes.data?.subscription_until ?? null,
+        reportsThisMonth: effectiveReportsThisMonth(n),
+        maxReportsMonth: n?.max_reports_month ?? null,
+        subscriptionEnd: n?.subscription_end ?? null,
       }
     },
   })
@@ -46,10 +100,9 @@ function useDashboardStats() {
 
 function formatSubscription(dateStr: string | null) {
   if (!dateStr) return '—'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('es-AR', {
+  return parseDateOnly(dateStr).toLocaleDateString('es-AR', {
     day: '2-digit',
-    month: 'long',
+    month: '2-digit',
     year: 'numeric',
   })
 }
@@ -111,9 +164,15 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold'>
-                {isLoading ? '—' : data?.reports}
+                {isLoading || !data
+                  ? '—'
+                  : data.maxReportsMonth != null
+                    ? `${data.reportsThisMonth} / ${data.maxReportsMonth}`
+                    : data.reportsThisMonth}
               </div>
-              <p className='text-xs text-muted-foreground mt-1'>Ver reportes →</p>
+              <p className='text-xs text-muted-foreground mt-1'>
+                Consumo del período · Ver reportes →
+              </p>
             </CardContent>
           </Card>
 
@@ -126,7 +185,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold'>
-                {isLoading ? '—' : formatSubscription(data?.subscriptionUntil ?? null)}
+                {isLoading ? '—' : formatSubscription(data?.subscriptionEnd ?? null)}
               </div>
             </CardContent>
           </Card>
