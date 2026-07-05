@@ -52,6 +52,7 @@ const planLabel = (
 ): string => {
   if (type === 'free_trial') return 'Trial'
   if (type === 'beta') return 'Beta'
+  if (type === 'invitation') return 'Cortesía'
   const tier = maxReports === 100 ? 'Plus' : maxReports === 30 ? 'Básico' : null
   if (type === 'monthly' && tier) return `${tier} Mensual`
   if (type === 'semestral' && tier) return `${tier} Semestral`
