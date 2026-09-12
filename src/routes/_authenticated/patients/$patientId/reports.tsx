@@ -226,8 +226,14 @@ function PatientReportsPage() {
         toast.error(apiErrorMessage(res.status, data, 'Error al sincronizar'))
         return
       }
+      const profileMessage = data.profile_updated
+        ? ' Ficha de paciente actualizada.'
+        : ''
+      const reportMessage = data.report_needs_refresh
+        ? ' El reporte anterior cambió: ya podés regenerarlo.'
+        : ''
       toast.success(
-        `Sincronizado: ${data.synced} mediciones${data.latest_date ? ` — última: ${data.latest_date}` : ''}`
+        `Sincronizado: ${data.synced} mediciones${data.latest_date ? ` — última: ${data.latest_date}` : ''}.${profileMessage}${reportMessage}`
       )
       await loadAll()
     } catch {
