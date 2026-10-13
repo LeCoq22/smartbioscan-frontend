@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ExtendAccountCard } from './extend-account'
 
 interface LocalSettings {
   is_maintenance: boolean
@@ -530,6 +531,10 @@ export function MaintenanceSection() {
 
       <div className='max-w-lg'>
         <InviteRemindersCard />
+      </div>
+
+      <div className='max-w-lg'>
+        <ExtendAccountCard />
       </div>
 
       <div className='max-w-lg'>

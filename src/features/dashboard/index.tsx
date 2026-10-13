@@ -74,7 +74,7 @@ function useDashboardStats() {
       if (!session) throw new Error('No autenticado')
       const nutriId = session.user.id
 
-      const [patientsRes, nutriRes] = await Promise.all([
+      const [patientsRes, nutriRes, creditsRes] = await Promise.all([
         supabase
           .from('patients')
           .select('*', { count: 'exact', head: true })
@@ -86,12 +86,21 @@ function useDashboardStats() {
           )
           .eq('id', nutriId)
           .single(),
+        supabase
+          .from('account_extensions')
+          .select('reports_remaining')
+          .eq('nutri_id', nutriId)
+          .gt('reports_remaining', 0),
       ])
+      if (creditsRes.error) throw creditsRes.error
       const n = nutriRes.data as NutriStats | null
+      const extraReports = (creditsRes.data ?? []).reduce((sum, row) => sum + row.reports_remaining, 0)
+      const used = effectiveReportsThisMonth(n)
       return {
         patients: patientsRes.count ?? 0,
-        reportsThisMonth: effectiveReportsThisMonth(n),
-        maxReportsMonth: n?.max_reports_month ?? null,
+        reportsThisMonth: used,
+        maxReportsMonth: n?.max_reports_month != null ? Math.max(n.max_reports_month, used) + extraReports : null,
+        extraReports,
         subscriptionEnd: n?.subscription_end ?? null,
       }
     },
@@ -173,6 +182,9 @@ export function Dashboard() {
               <p className='text-xs text-muted-foreground mt-1'>
                 Consumo del período · Ver reportes →
               </p>
+              {!!data?.extraReports && <p className='text-xs text-muted-foreground mt-1'>
+                Incluye {data.extraReports} reportes extra aún disponibles.
+              </p>}
             </CardContent>
           </Card>
 
