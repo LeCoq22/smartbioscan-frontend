@@ -2,15 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Users, FileText, CalendarCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { BillingPanel, useBillingSummary } from './components/billing-panel'
 
 type NutriStats = {
   subscription_end: string | null
@@ -58,8 +54,14 @@ function effectiveReportsThisMonth(n: NutriStats | null | undefined): number {
   const resetsMonthly =
     n.subscription_type === 'monthly' || n.subscription_type === 'semestral'
   if (resetsMonthly && n.subscription_start) {
-    const cs = cupoCycleStart(parseDateOnly(n.subscription_start), startOfToday())
-    if (n.reports_month_reset == null || parseDateOnly(n.reports_month_reset) < cs) {
+    const cs = cupoCycleStart(
+      parseDateOnly(n.subscription_start),
+      startOfToday()
+    )
+    if (
+      n.reports_month_reset == null ||
+      parseDateOnly(n.reports_month_reset) < cs
+    ) {
       return 0
     }
   }
@@ -70,7 +72,9 @@ function useDashboardStats() {
   return useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       if (!session) throw new Error('No autenticado')
       const nutriId = session.user.id
 
@@ -94,12 +98,18 @@ function useDashboardStats() {
       ])
       if (creditsRes.error) throw creditsRes.error
       const n = nutriRes.data as NutriStats | null
-      const extraReports = (creditsRes.data ?? []).reduce((sum, row) => sum + row.reports_remaining, 0)
+      const extraReports = (creditsRes.data ?? []).reduce(
+        (sum, row) => sum + row.reports_remaining,
+        0
+      )
       const used = effectiveReportsThisMonth(n)
       return {
         patients: patientsRes.count ?? 0,
         reportsThisMonth: used,
-        maxReportsMonth: n?.max_reports_month != null ? Math.max(n.max_reports_month, used) + extraReports : null,
+        maxReportsMonth:
+          n?.max_reports_month != null
+            ? Math.max(n.max_reports_month, used) + extraReports
+            : null,
         extraReports,
         subscriptionEnd: n?.subscription_end ?? null,
       }
@@ -119,6 +129,7 @@ function formatSubscription(dateStr: string | null) {
 export function Dashboard() {
   const navigate = useNavigate()
   const { data, isLoading } = useDashboardStats()
+  const { data: billing } = useBillingSummary()
 
   function clickableCardProps(to: string) {
     return {
@@ -145,7 +156,9 @@ export function Dashboard() {
       <Main>
         <div className='mb-6'>
           <h1 className='text-2xl font-bold tracking-tight'>Dashboard</h1>
-          <p className='text-muted-foreground text-sm'>Panel del nutricionista</p>
+          <p className='text-sm text-muted-foreground'>
+            Panel del nutricionista
+          </p>
         </div>
 
         <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
@@ -160,7 +173,9 @@ export function Dashboard() {
               <div className='text-2xl font-bold'>
                 {isLoading ? '—' : data?.patients}
               </div>
-              <p className='text-xs text-muted-foreground mt-1'>Ver pacientes →</p>
+              <p className='mt-1 text-xs text-muted-foreground'>
+                Ver pacientes →
+              </p>
             </CardContent>
           </Card>
 
@@ -176,15 +191,17 @@ export function Dashboard() {
                 {isLoading || !data
                   ? '—'
                   : data.maxReportsMonth != null
-                    ? `${data.reportsThisMonth} / ${data.maxReportsMonth}`
+                    ? `${billing?.enabled ? billing.quota.used : data.reportsThisMonth} / ${billing?.enabled ? billing.quota.limit : data.maxReportsMonth}`
                     : data.reportsThisMonth}
               </div>
-              <p className='text-xs text-muted-foreground mt-1'>
+              <p className='mt-1 text-xs text-muted-foreground'>
                 Consumo del período · Ver reportes →
               </p>
-              {!!data?.extraReports && <p className='text-xs text-muted-foreground mt-1'>
-                Incluye {data.extraReports} reportes extra aún disponibles.
-              </p>}
+              {!!data?.extraReports && (
+                <p className='mt-1 text-xs text-muted-foreground'>
+                  Incluye {data.extraReports} reportes extra aún disponibles.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -197,11 +214,14 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold'>
-                {isLoading ? '—' : formatSubscription(data?.subscriptionEnd ?? null)}
+                {isLoading
+                  ? '—'
+                  : formatSubscription(data?.subscriptionEnd ?? null)}
               </div>
             </CardContent>
           </Card>
         </div>
+        <BillingPanel />
       </Main>
     </>
   )
