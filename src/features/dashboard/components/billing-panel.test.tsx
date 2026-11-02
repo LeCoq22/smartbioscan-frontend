@@ -34,9 +34,7 @@ beforeEach(() => {
     subscription_end: '2026-10-30',
     cycle_end: '2026-10-30',
     quota: { remaining: 15, used: 15, limit: 30 },
-    packs: [
-      { reports: 10, amount: '9500.00' },
-    ],
+    packs: [{ reports: 10, amount: '9500.00' }],
     plans: [basic, plus],
     pending: null,
   }
@@ -155,5 +153,66 @@ it('does not offer purchase buttons when feature is disabled', async () => {
   const screen = await mount()
   await expect
     .element(screen.getByRole('button', { name: 'Comprar paquete' }))
+    .not.toBeInTheDocument()
+})
+
+it('retries renewal authorization without making another purchase', async () => {
+  summary.pending = {
+    id: 'paid-upgrade',
+    status: 'syncing',
+    mode: 'exhaustion',
+    target_plan: plus,
+    provider_synced: false,
+    renewal_init_point: 'https://www.mercadopago.com.ar/subscriptions/checkout',
+  }
+  vi.mocked(fetch).mockImplementation(
+    async (_url, init) =>
+      new Response(
+        JSON.stringify(
+          init?.method === 'POST'
+            ? { detail: 'Reintentá la autorización' }
+            : summary
+        ),
+        { status: init?.method === 'POST' ? 502 : 200 }
+      )
+  )
+  const screen = await mount()
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Autorizar nuevo débito' })
+  )
+  await expect
+    .element(screen.getByRole('alert'))
+    .toHaveTextContent('Reintentá la autorización')
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Autorizar nuevo débito' })
+  )
+  await expect
+    .poll(
+      () =>
+        vi.mocked(fetch).mock.calls.filter((c) => c[1]?.method === 'POST')
+          .length
+    )
+    .toBe(2)
+  const posts = vi
+    .mocked(fetch)
+    .mock.calls.filter((c) => c[1]?.method === 'POST')
+  expect(
+    posts.every((c) => String(c[0]).endsWith('/orders/paid-upgrade/renewal'))
+  ).toBe(true)
+})
+it('does not request authorization again once a scheduled change is authorized', async () => {
+  summary.pending = {
+    id: 'downgrade',
+    status: 'scheduled',
+    mode: 'expiry',
+    target_plan: basic,
+    previous_end: '2026-10-30',
+    provider_synced: true,
+    renewal_init_point: 'https://www.mercadopago.com.ar/subscriptions/checkout',
+  }
+  const screen = await mount()
+  await expect.element(screen.getByText(/autorizado/i)).toBeVisible()
+  await expect
+    .element(screen.getByRole('button', { name: 'Autorizar nuevo débito' }))
     .not.toBeInTheDocument()
 })

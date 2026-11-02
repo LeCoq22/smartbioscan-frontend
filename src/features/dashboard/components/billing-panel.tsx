@@ -34,6 +34,7 @@ type Order = {
   target_plan: Plan
   previous_end: string
   init_point?: string
+  renewal_init_point?: string
   provider_synced: boolean
 }
 export type BillingSummary = {
@@ -123,6 +124,36 @@ export function BillingPanel() {
       setBusy(false)
     }
   }
+  async function authorizeRenewal() {
+    if (!data?.pending) return
+    setBusy(true)
+    setFailure('')
+    try {
+      const result = await billingRequest(
+        `/orders/${data.pending.id}/renewal`,
+        {}
+      )
+      if (result.init_point) {
+        const url = new URL(result.init_point)
+        if (
+          url.protocol !== 'https:' ||
+          !/(^|\.)mercadopago\.com(\.ar)?$/.test(url.hostname)
+        )
+          throw new Error('El enlace de autorización no es válido')
+        window.location.assign(url.toString())
+      } else {
+        await client.invalidateQueries({ queryKey: ['billing-summary'] })
+      }
+    } catch (err) {
+      setFailure(
+        err instanceof Error
+          ? err.message
+          : 'No se pudo preparar la autorización'
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
   async function confirm() {
     if (!choice) return
     setBusy(true)
@@ -161,7 +192,8 @@ export function BillingPanel() {
           <CreditCard className='h-5 w-5' /> Mi plan y reportes
         </CardTitle>
         <CardDescription>
-          Gestioná tu suscripción y comprá paquetes de 10 reportes sin vencimiento.
+          Gestioná tu suscripción y comprá paquetes de 10 reportes sin
+          vencimiento.
         </CardDescription>
       </CardHeader>
       <CardContent className='space-y-6'>
@@ -221,11 +253,24 @@ export function BillingPanel() {
                     : data.pending.status === 'checkout'
                       ? 'El cambio todavía no está pagado. Completá el pago para reservar el nuevo plan.'
                       : data.pending.status === 'syncing'
-                        ? 'Plan activado. Estamos confirmando la fecha de renovación con Mercado Pago.'
+                        ? 'Tu plan pagado está activado. Falta autorizar el nuevo débito automático en Mercado Pago; el débito anterior está pausado.'
                         : data.pending.mode === 'expiry'
-                          ? `Cambio programado para el vencimiento del ${day(data.pending.previous_end)}. El plan actual se mantiene hasta entonces; el nuevo período se activa al confirmarse el cobro.`
+                          ? data.pending.provider_synced
+                            ? `Cambio autorizado para el vencimiento del ${day(data.pending.previous_end)}. El plan actual se mantiene hasta entonces; el nuevo período se activa al confirmarse el cobro.`
+                            : `Autorizá el nuevo débito para programar el cambio al vencimiento del ${day(data.pending.previous_end)}. Hasta completar esa autorización, tu abono anterior sigue renovándose normalmente.`
                           : 'Cambio pagado. Se activará al agotar el cupo de tu plan o al terminar el ciclo vigente. Tus reportes extra se conservan.'}
                 </p>
+                {data.pending.renewal_init_point &&
+                  !data.pending.provider_synced &&
+                  ['scheduled', 'syncing'].includes(data.pending.status) && (
+                    <Button
+                      className='mt-3'
+                      disabled={busy}
+                      onClick={authorizeRenewal}
+                    >
+                      Autorizar nuevo débito
+                    </Button>
+                  )}
                 {data.pending.status === 'checkout' && (
                   <Button
                     className='mt-3'
@@ -272,8 +317,8 @@ export function BillingPanel() {
                       plan.max_reports_month >
                       data.current_plan.max_reports_month
                     const timing = upgrade
-                      ? `Pagás ahora. Se activa al agotar el cupo de tu plan o al terminar el ciclo; recibís el cupo completo del nuevo plan. Tus reportes extra se conservan. ${data.expiry_policy === 'extend_expiry' ? 'El nuevo período se suma al vencimiento actual.' : 'El nuevo período comienza al activarse el cambio.'}`
-                      : `Se programa para el ${day(data.subscription_end)}. Conservás tu plan actual y el nuevo importe se cobra al vencimiento.`
+                      ? `Pagás ahora. Se activa al agotar el cupo de tu plan o al terminar el ciclo; recibís el cupo completo del nuevo plan. Tus reportes extra se conservan. El nuevo período se suma al vencimiento actual. Después autorizás el nuevo débito automático desde este panel; el anterior queda pausado.`
+                      : `Autorizás el nuevo débito en Mercado Pago para el ${day(data.subscription_end)}. Conservás tu plan actual y el nuevo importe se cobra al vencimiento.`
                     return (
                       <div
                         key={plan.id}
@@ -320,12 +365,13 @@ export function BillingPanel() {
                 <Plus className='h-4 w-4' /> Reportes extra
               </h2>
               <p className='mb-3 text-sm text-muted-foreground'>
-                Al precio por reporte que pagaste en tu plan. No vencen y se conservan
-                al renovar o cambiar de abono. Se usan después del cupo del plan
-                y requieren una suscripción vigente.
+                Al precio por reporte que pagaste en tu plan. No vencen y se
+                conservan al renovar o cambiar de abono. Se usan después del
+                cupo del plan y requieren una suscripción vigente.
               </p>
               <p className='mb-3 text-sm font-medium'>
-                Saldo comprado sin vencimiento: {data.quota.pack_remaining ?? 0} reportes
+                Saldo comprado sin vencimiento: {data.quota.pack_remaining ?? 0}{' '}
+                reportes
               </p>
               <div className='grid gap-3 sm:grid-cols-3'>
                 {data.packs.map((pack) => (
@@ -346,7 +392,8 @@ export function BillingPanel() {
                           title: `${pack.reports} reportes extra`,
                           amount: pack.amount,
                           scheduled: false,
-                          timing: 'Se suman al confirmarse el pago y no vencen. Se conservan al renovar o cambiar de abono. No cambian tu fecha de renovación y requieren una suscripción vigente.',
+                          timing:
+                            'Se suman al confirmarse el pago y no vencen. Se conservan al renovar o cambiar de abono. No cambian tu fecha de renovación y requieren una suscripción vigente.',
                         })
                       }}
                     >
